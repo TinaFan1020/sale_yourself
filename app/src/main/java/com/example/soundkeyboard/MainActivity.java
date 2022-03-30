@@ -431,6 +431,7 @@ public class MainActivity extends AppCompatActivity {
                 //Log.i(TAG,"looptimes="+looptimes+" max= "+localmax+"min= "+localmin);
                 //Log.i(TAG,"looptimes"+looptimes+" loczlzeros="+localzeros+" zerocross= "+zerocross);
                 Log.i(TAG,"looptimes="+looptimes+"pos avg local="+pos_avg_local);
+
             }
             audioRecord.stop();
             dos.close();
