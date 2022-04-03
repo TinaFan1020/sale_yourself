@@ -69,8 +69,10 @@ public class MainActivity extends AppCompatActivity {
     private String tmpfile;
     private final static String TAG = "MyTag";
     int cnt = 0;
-    private MediaRecorder recorder;
-    private MediaPlayer player;
+    private MediaRecorder recorder;//錄音ㄉ
+    private MediaPlayer player;//播放ㄉ
+    double[] toTransform;//用來放要拿去fftㄉdata
+    double most_freq=0.0;//fft出來最大ㄉ頻率
     int media_strokes=0;
     int media_avg=0;
     //////
@@ -294,6 +296,8 @@ public class MainActivity extends AppCompatActivity {
         paint= new Paint();
         paint.setColor(Color.GREEN);
 
+
+
 //16K採集率
         int frequency = 44100;
 //格式
@@ -327,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
             //int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);
             int bufferSize=4096;// set as power of 2 for fft
             transformer = new RealDoubleFFT(bufferSize);
-            Log.i(TAG,"buffer size="+bufferSize);
+            //Log.i(TAG,"buffer size="+bufferSize);
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 checkPermission();
             }
@@ -340,7 +344,12 @@ public class MainActivity extends AppCompatActivity {
 
             AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
             short[] buffer = new short[bufferSize];
-            double[] toTransform = new double[bufferSize];
+            toTransform = new double[bufferSize*2];
+            //to calculate data after fft
+            double[] re = new double[bufferSize];
+            double[] im = new double[bufferSize];
+            double[] magnitude = new double[bufferSize];
+
             audioRecord.startRecording();
             Log.i(TAG, "開始錄音");
             isRecording = true;
@@ -364,11 +373,11 @@ public class MainActivity extends AppCompatActivity {
                 double pos_avg_local=0;
                 double neg_avg_local=0;
                 //Log.i(TAG, "read result"+bufferReadResult);
-                //every 0.08s
+
                 for (int i = 0; i < bufferReadResult; i++  ) {
                     //double db = 20 * (Math.log10(Math.abs(buffer[i])));
 
-                    if(looptimes==5) Log.i("special","i="+i+"buffer="+buffer[i]);
+                    //if(looptimes==5) Log.i("special","i="+i+"buffer="+buffer[i]);
 
 
                     lastpos=ispos;
@@ -389,11 +398,38 @@ public class MainActivity extends AppCompatActivity {
                     if(localmin>buffer[i]) localmin=buffer[i];
                     //if(i%200==0)Log.i(TAG,"buffer["+i+"]content="+buffer[i]+"avg="+audio_avg);
                     dos.writeShort(buffer[i]);
+                    /*
+                    put data into fft array
+                     */
+                    toTransform[i] = (double) buffer[i] / 32768.0;
                 };
                 pos_avg_local=pos_total_local/pos_cnt_local;
                 pos_avg_global=pos_total_global/pos_cnt_global;
                 neg_avg_local=neg_total_local/audio_cnt_local;
+                /*
+                do fft
+                 */
+                transformer.ft(toTransform);
 
+                // Calculate the Real and imaginary and Magnitude.
+                for(int i = 0; i < bufferSize; i++){
+                    // real is stored in first part of array
+                    re[i] = toTransform[i*2];
+                    // imaginary is stored in the sequential part
+                    im[i] = toTransform[(i*2)+1];
+                    // magnitude is calculated by the square root of (imaginary^2 + real^2)
+                    magnitude[i] = Math.sqrt((re[i] * re[i]) + (im[i]*im[i]));
+                }
+
+                double peak = -1.0;
+                // Get the largest magnitude peak
+                for(int i = 0; i < bufferSize; i++){
+                    if(peak < magnitude[i])
+                        peak = magnitude[i];
+                }
+                most_freq = (frequency * peak)/bufferSize;
+                Log.i(TAG,"Most freq="+most_freq);
+                //three state counter if recently detected block for a moment to prevent error
                 if(stroke_state==0)
                 {
                     if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0)
@@ -431,8 +467,6 @@ public class MainActivity extends AppCompatActivity {
                 //Log.i(TAG,"looptimes="+looptimes+" max= "+localmax+"min= "+localmin);
                 //Log.i(TAG,"looptimes"+looptimes+" loczlzeros="+localzeros+" zerocross= "+zerocross);
                 Log.i(TAG,"looptimes="+looptimes+"pos avg local="+pos_avg_local);
-
-
             }
             audioRecord.stop();
             dos.close();
@@ -446,9 +480,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 long idd=Thread.currentThread().getId();
-                Log.i(TAG,"run audio start thread id="+idd);
+                //Log.i(TAG,"run audio start thread id="+idd);
                 StartAudioRecord();
-                Log.e(TAG,"start");
+                //Log.e(TAG,"start");
             }
         });
         thread.start();
