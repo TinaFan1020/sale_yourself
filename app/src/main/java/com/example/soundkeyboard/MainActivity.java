@@ -106,11 +106,17 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_record.setOnClickListener(v->onclick_audio_start());
         btn_audio_stop.setOnClickListener(v->onclick_audio_stop());
         btn_audio_play.setOnClickListener(v->onclick_audio_play());
+        bitmap = Bitmap.createBitmap((int)4096,(int)1000,Bitmap.Config.ARGB_8888);
+        canvas = new Canvas(bitmap);
+        paint= new Paint();
+        paint.setColor(Color.GREEN);
         imageView = (ImageView) this.findViewById(R.id.ImageView01);
+        imageView.setImageBitmap(bitmap);
         tmpfile = getExternalCacheDir().getAbsolutePath();
         Log.i(TAG,"pid= "+Thread.currentThread().getId());
-        tmpfile += "/audiorecordtest.3gp";
-        Log.i(TAG, "file path= " + tmpfile);
+        //tmpfile += "/audiorecordtest.3gp";
+        //Log.i(TAG, "file path= " + tmpfile);
+        imageView.invalidate();
 
     }
 
@@ -235,6 +241,23 @@ public class MainActivity extends AppCompatActivity {
 
                             //Thread.currentThread().getId());
                     break;
+                case 2:
+                    //for drawing;
+                    double tmp[]= (double[]) msg.obj;
+                    canvas.drawColor(Color.BLACK);
+                    for (int i = 0; i < tmp.length; i++) {
+                        int x = i;
+
+                        int downy = (int) (1000 - (tmp[i] * 100));
+                        int upy = 1000;
+
+                        canvas.drawLine(x, downy, x, upy, paint);
+                    }
+                        imageView.invalidate();
+
+
+                    break;
+
             }
             super.handleMessage(msg);
 
@@ -290,13 +313,6 @@ public class MainActivity extends AppCompatActivity {
         int stroke_state=0;
         //for fft
         RealDoubleFFT transformer;
-        //for drawing;
-        bitmap = Bitmap.createBitmap((int)256,(int)100,Bitmap.Config.ARGB_8888);
-        canvas = new Canvas(bitmap);
-        paint= new Paint();
-        paint.setColor(Color.GREEN);
-
-
 
 //16K採集率
         int frequency = 44100;
@@ -330,7 +346,7 @@ public class MainActivity extends AppCompatActivity {
             DataOutputStream dos = new DataOutputStream(bos);
             //int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);
             int bufferSize=4096;// set as power of 2 for fft
-            transformer = new RealDoubleFFT(bufferSize);
+            transformer = new RealDoubleFFT(bufferSize*2);//!
             //Log.i(TAG,"buffer size="+bufferSize);
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 checkPermission();
@@ -344,7 +360,7 @@ public class MainActivity extends AppCompatActivity {
 
             AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
             short[] buffer = new short[bufferSize];
-            toTransform = new double[bufferSize];
+            toTransform = new double[bufferSize*2];//!
             //to calculate data after fft
             double[] re;
             double[] im;
@@ -373,13 +389,15 @@ public class MainActivity extends AppCompatActivity {
                 double pos_avg_local=0;
                 double neg_avg_local=0;
                 //Log.i(TAG, "read result"+bufferReadResult);
+                for(int i=0;i<bufferSize*2;i++)
+                {
+                    toTransform[i]=0;
+                }
 
                 for (int i = 0; i < bufferReadResult; i++  ) {
                     //double db = 20 * (Math.log10(Math.abs(buffer[i])));
 
                     //if(looptimes==5) Log.i("special","i="+i+"buffer="+buffer[i]);
-
-
                     lastpos=ispos;
 
                     if(buffer[i]>0) {ispos=1;pos_total_local+=buffer[i];pos_cnt_local++;pos_cnt_global++;pos_total_global+=buffer[i];}
@@ -475,12 +493,13 @@ public class MainActivity extends AppCompatActivity {
                 int len=magnitude.length;
                 // Get the largest magnitude peak
                 for(int i = 0; i <len; i++){
-                    if(peak < Math.abs(spectrum[i]))
+                    if(peak < Math.abs(spectrum[i])) {
                         peak = Math.abs(spectrum[i]);
-                        peak_location=i;
+                        peak_location = i;
+                    }
                 }
-                most_freq = (frequency * peak_location)/bufferSize;
-                Log.i(TAG,"Most freq="+peak_location);
+                most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
+                Log.i(TAG,"Most freq="+most_freq);
                 //three state counter if recently detected block for a moment to prevent error
                 if(stroke_state==0)
                 {
@@ -503,6 +522,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else stroke_state++;
                 }
+                //to draw using handler
+                Message msg = handlerMeasure.obtainMessage();
+                msg.what=2;
+                msg.obj=spectrum;
+                handlerMeasure.sendMessage(msg);
+
                 /*
                 if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0)
                 {
