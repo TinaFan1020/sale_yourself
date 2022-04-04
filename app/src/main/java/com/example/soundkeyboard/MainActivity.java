@@ -344,11 +344,11 @@ public class MainActivity extends AppCompatActivity {
 
             AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
             short[] buffer = new short[bufferSize];
-            toTransform = new double[bufferSize*2];
+            toTransform = new double[bufferSize];
             //to calculate data after fft
-            double[] re = new double[bufferSize];
-            double[] im = new double[bufferSize];
-            double[] magnitude = new double[bufferSize];
+            double[] re;
+            double[] im;
+            double[] magnitude;
 
             audioRecord.startRecording();
             Log.i(TAG, "開始錄音");
@@ -410,8 +410,56 @@ public class MainActivity extends AppCompatActivity {
                 do fft
                  */
                 transformer.ft(toTransform);
-
+                double[] spectrum;
+                if (toTransform.length % 2 != 0) {// if odd
+                    spectrum = new double[(toTransform.length + 1) / 2];
+                    re=new double[(toTransform.length + 1) / 2];
+                    im=new double[(toTransform.length + 1) / 2];
+                    magnitude=new double[(toTransform.length + 1) / 2];
+                    re[0]=toTransform[0];//real part of first complex fft coeffient is x[0]
+                    im[0]=0;
+                    magnitude[0]=re[0]*re[0];
+                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc
+                    // component
+                    for (int index = 1; index < toTransform.length; index = index + 2) {
+                        // magnitude =re*re + im*im
+                        double mag = toTransform[index] * toTransform[index]
+                                + toTransform[index + 1] * toTransform[index + 1];
+                        re[(index + 1) / 2]=toTransform[index];
+                        im[(index+1)/2]=toTransform[index+1];
+                        magnitude[(index+1)/2]=Math.sqrt(mag);
+                        spectrum[(index + 1) / 2] = Math.pow(mag, 0.5);
+                    }
+                } else {// if even
+                    spectrum = new double[toTransform.length / 2 + 1];
+                    re=new double[toTransform.length / 2 + 1];
+                    im=new double[toTransform.length / 2 + 1];
+                    magnitude=new double[toTransform.length / 2 + 1];
+                    re[0]=toTransform[0];//real part of first complex fft coeffient is x[0]
+                    im[0]=0;
+                    magnitude[0]=re[0]*re[0];
+                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc
+                    // component.
+                    // real only
+                    for (int index = 1; index < toTransform.length - 1; index = index + 2) {
+                        // magnitude =re*re + im*im
+                        double mag = toTransform[index] * toTransform[index]
+                                + toTransform[index + 1] * toTransform[index + 1];
+                        re[(index + 1) / 2]=toTransform[index];
+                        im[(index+1)/2]=toTransform[index+1];
+                        magnitude[(index+1)/2]=Math.sqrt(mag);
+                        spectrum[(index + 1) / 2] = Math.pow(mag, 0.5);
+                    }
+                    // dc component. real only
+                    spectrum[spectrum.length - 1] = Math.pow(toTransform[toTransform.length - 1]
+                            * toTransform[toTransform.length - 1], 0.5);
+                    re[re.length - 1]=toTransform[toTransform.length - 1];
+                    im[im.length-1]=0;
+                    magnitude[magnitude.length-1]=Math.sqrt(re[re.length - 1]*re[re.length - 1]);
+                }
+                //after fft the real part is stored in index 1,3,5....(n/2)-1
                 // Calculate the Real and imaginary and Magnitude.
+                /*this is wrong
                 for(int i = 0; i < bufferSize; i++){
                     // real is stored in first part of array
                     re[i] = toTransform[i*2];
@@ -420,15 +468,19 @@ public class MainActivity extends AppCompatActivity {
                     // magnitude is calculated by the square root of (imaginary^2 + real^2)
                     magnitude[i] = Math.sqrt((re[i] * re[i]) + (im[i]*im[i]));
                 }
+                */
 
                 double peak = -1.0;
+                int peak_location=-1;
+                int len=magnitude.length;
                 // Get the largest magnitude peak
-                for(int i = 0; i < bufferSize; i++){
-                    if(peak < magnitude[i])
-                        peak = magnitude[i];
+                for(int i = 0; i <len; i++){
+                    if(peak < Math.abs(spectrum[i]))
+                        peak = Math.abs(spectrum[i]);
+                        peak_location=i;
                 }
-                most_freq = (frequency * peak)/bufferSize;
-                Log.i(TAG,"Most freq="+most_freq);
+                most_freq = (frequency * peak_location)/bufferSize;
+                Log.i(TAG,"Most freq="+peak_location);
                 //three state counter if recently detected block for a moment to prevent error
                 if(stroke_state==0)
                 {
@@ -466,12 +518,13 @@ public class MainActivity extends AppCompatActivity {
 
                 //Log.i(TAG,"looptimes="+looptimes+" max= "+localmax+"min= "+localmin);
                 //Log.i(TAG,"looptimes"+looptimes+" loczlzeros="+localzeros+" zerocross= "+zerocross);
-                Log.i(TAG,"looptimes="+looptimes+"pos avg local="+pos_avg_local);
+                //Log.i(TAG,"looptimes="+looptimes+"pos avg local="+pos_avg_local);
             }
             audioRecord.stop();
             dos.close();
         } catch (Throwable t) {
             Log.e(TAG, "錄音失敗"+t);
+            t.printStackTrace();
         }
     }
     private void onclick_audio_start()
