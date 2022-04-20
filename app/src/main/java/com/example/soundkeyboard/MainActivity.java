@@ -60,7 +60,7 @@ import jfftpack.RealDoubleFFT;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
-    Button btn_media_start, btn_media_stop, btn_media_play,btn_audio_record,btn_audio_stop,btn_audio_play;
+    Button btn_media_start, btn_media_stop, btn_media_play,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window;
     ImageView imageView;
     TextView txt_out;
     Bitmap bitmap;
@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
     //int media_total=0;
     File RF;
     File file;
+    int dowindow=1;//用來開關window func 1是開 0是關
 
 
     @Override
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_record=findViewById(R.id.btn_audio_record);
         btn_audio_stop=findViewById(R.id.btn_audio_end);
         btn_audio_play=findViewById(R.id.btn_audio_play);
+        btn_toggle_window=findViewById(R.id.btn_toggle_window);
         txt_out = findViewById(R.id.txt_out);
         btn_media_start.setOnClickListener(v -> startMediaRecording());
         btn_media_stop.setOnClickListener(v -> endMediaRecording());
@@ -106,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_record.setOnClickListener(v->onclick_audio_start());
         btn_audio_stop.setOnClickListener(v->onclick_audio_stop());
         btn_audio_play.setOnClickListener(v->onclick_audio_play());
+        btn_toggle_window.setOnClickListener(v->toggle());
         bitmap = Bitmap.createBitmap((int)4096,(int)1000,Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bitmap);
         paint= new Paint();
@@ -346,6 +349,7 @@ public class MainActivity extends AppCompatActivity {
             DataOutputStream dos = new DataOutputStream(bos);
             //int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);
             int bufferSize=4096;// set as power of 2 for fft
+            int fftSize=bufferSize*2;
             transformer = new RealDoubleFFT(bufferSize*2);//!
             //Log.i(TAG,"buffer size="+bufferSize);
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -393,7 +397,7 @@ public class MainActivity extends AppCompatActivity {
                 {
                     toTransform[i]=0;
                 }
-
+                //read data from mic and predict strokes
                 for (int i = 0; i < bufferReadResult; i++  ) {
                     //double db = 20 * (Math.log10(Math.abs(buffer[i])));
 
@@ -424,6 +428,14 @@ public class MainActivity extends AppCompatActivity {
                 pos_avg_local=pos_total_local/pos_cnt_local;
                 pos_avg_global=pos_total_global/pos_cnt_global;
                 neg_avg_local=neg_total_local/audio_cnt_local;
+                /*
+                apply window func before fft
+                */
+                if(dowindow==1) {
+                    double window[] = new double[bufferSize * 2];
+                    window = hanning(bufferSize * 2);
+                    toTransform = applyWindowFunc(toTransform, window);
+                }
                 /*
                 do fft
                  */
@@ -499,7 +511,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
-                Log.i(TAG,"Most freq="+most_freq);
+                //Log.i(TAG,"Most freq="+most_freq);
                 //three state counter if recently detected block for a moment to prevent error
                 if(stroke_state==0)
                 {
@@ -522,7 +534,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else stroke_state++;
                 }
-                //to draw using handler
+                //to draw using handler by sending msg
                 Message msg = handlerMeasure.obtainMessage();
                 msg.what=2;
                 msg.obj=spectrum;
@@ -619,5 +631,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    /**
+     * apply desired window function to the signal for fft
+     *
+     * @param signal
+     *            : the signal intended to apply the window on
+     * @param window
+     *            : window function
+     * @return the resulting signal after being applied the window
+     */
+    private static double[] applyWindowFunc(double[] signal, double[] window) {
+        double[] result = new double[signal.length];
+        int leng= window.length;
+        for (int i = 0; i < leng; i++) {
+            result[i] = signal[i] * window[i];
+        }
+        return result;
+    }
 
+    /**
+     * generate hanning window function
+     *
+     * @param windowSize
+     * @return the hanning window of a size "windowSize"
+     */
+    private static double[] hanning(int windowSize) {
+        double h_wnd[] = new double[windowSize]; // Hanning window
+        for (int i = 0; i < windowSize; i++) { // calculate the hanning window
+            h_wnd[i] = 0.5 * (1 - Math.cos(2.0 * Math.PI * i / (windowSize - 1)));
+            //window[i] = 0.54f - 0.46f * cos( (float)i * 2.0f * π / (n-1) );
+        }
+        return h_wnd;
+    }
+
+    private void toggle()
+    {
+        if(dowindow==1) {dowindow=0;txt_out.setText("window close"); return;}
+        if(dowindow==0) {dowindow=1;txt_out.setText("window open");return;}
+
+    }
+
+
+//end of class
 }
