@@ -431,7 +431,7 @@ public class MainActivity extends AppCompatActivity {
                 /*
                 apply window func before fft
                 */
-                if(dowindow==1) {
+                if(dowindow>0) {
                     double window[] = new double[bufferSize * 2];
                     window = hanning(bufferSize * 2);
                     toTransform = applyWindowFunc(toTransform, window);
@@ -655,10 +655,16 @@ public class MainActivity extends AppCompatActivity {
      * @param windowSize
      * @return the hanning window of a size "windowSize"
      */
-    private static double[] hanning(int windowSize) {
+    private double[] hanning(int windowSize) {
         double h_wnd[] = new double[windowSize]; // Hanning window
-        for (int i = 0; i < windowSize; i++) { // calculate the hanning window
-            h_wnd[i] = 0.5 * (1 - Math.cos(2.0 * Math.PI * i / (windowSize - 1)));
+        if(dowindow==1)//hanning
+            for (int i = 0; i < windowSize; i++) { // calculate the hanning window
+            h_wnd[i] = 0.5d * (1d - Math.cos(2.0 * Math.PI * i / (windowSize - 1)));
+            //window[i] = 0.54f - 0.46f * cos( (float)i * 2.0f * π / (n-1) );
+        }
+        if(dowindow==2)//hamming
+            for (int i = 0; i < windowSize; i++) { // calculate the hanning window
+            h_wnd[i] = 0.54d - 0.46d*Math.cos(2.0 * Math.PI * i / (windowSize - 1));
             //window[i] = 0.54f - 0.46f * cos( (float)i * 2.0f * π / (n-1) );
         }
         return h_wnd;
@@ -666,8 +672,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void toggle()
     {
-        if(dowindow==1) {dowindow=0;txt_out.setText("window close"); return;}
-        if(dowindow==0) {dowindow=1;txt_out.setText("window open");return;}
+
+        if(dowindow==2) {dowindow=0;txt_out.setText("window close"); return;}
+        if(dowindow==1) {dowindow=2;txt_out.setText("window hamming v2"); return;}
+        if(dowindow==0) {dowindow=1;txt_out.setText("window hanning v1");return;}
 
     }
 
