@@ -419,7 +419,9 @@ public class MainActivity extends AppCompatActivity {
                     if(localmax<buffer[i]) localmax=buffer[i];
                     if(localmin>buffer[i]) localmin=buffer[i];
                     //if(i%200==0)Log.i(TAG,"buffer["+i+"]content="+buffer[i]+"avg="+audio_avg);
+                    //this is where we write into pcm
                     dos.writeShort(buffer[i]);
+                    //
                     /*
                     put data into fft array
                      */
@@ -534,6 +536,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else stroke_state++;
                 }
+                cut_frequency(spectrum, 3000, 18000, frequency, fftSize);
                 //to draw using handler by sending msg
                 Message msg = handlerMeasure.obtainMessage();
                 msg.what=2;
@@ -677,6 +680,21 @@ public class MainActivity extends AppCompatActivity {
         if(dowindow==1) {dowindow=2;txt_out.setText("window hamming v2"); return;}
         if(dowindow==0) {dowindow=1;txt_out.setText("window hanning v1");return;}
 
+    }
+    //given input spectrum set frequcncy between lower upper =0
+    //most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
+    private double[] cut_frequency(double[] spectrum ,int lower_bound,int upper_bound,int frequency,int fftsize)
+    {
+        int len=spectrum.length;
+        for(int i=0;i<len;i++)
+        {
+            double freq = (double)((double)frequency * (double)i)/(double)(fftsize);
+            if(freq>=lower_bound-10&&freq<=upper_bound+10)
+            {
+                spectrum[i]=0;
+            }
+        }
+        return spectrum;
     }
 
 
