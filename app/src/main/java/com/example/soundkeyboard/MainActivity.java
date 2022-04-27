@@ -420,7 +420,8 @@ public class MainActivity extends AppCompatActivity {
                     if(localmin>buffer[i]) localmin=buffer[i];
                     //if(i%200==0)Log.i(TAG,"buffer["+i+"]content="+buffer[i]+"avg="+audio_avg);
                     //this is where we write into pcm
-                    dos.writeShort(buffer[i]);
+                    if(i==2000) Log.i(TAG,"buffreadreult="+bufferReadResult+"i= "+i+" buffer[i]="+buffer[i]);
+                    //dos.writeShort(buffer[i]);
                     //
                     /*
                     put data into fft array
@@ -502,6 +503,18 @@ public class MainActivity extends AppCompatActivity {
                 }
                 */
 
+                //do inverse fft
+                transformer.bt(toTransform);
+                //Log.i(TAG,"to trans form len after inv fft="+toTransform.length);
+                int tmp_stat=0;
+
+                for(int i=0;i<toTransform.length;i++)
+                {
+                    if(i==2000)Log.i(TAG,"coeff "+i+ " after inv fft="+toTransform[i]);
+                    if(i>4096&&toTransform[i]>1)Log.i(TAG,"coeff "+i+ " !!!this should not >1"+toTransform[i]);
+                }
+
+                //end of do inverse fft
                 double peak = -1.0;
                 int peak_location=-1;
                 int len=magnitude.length;
@@ -536,7 +549,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else stroke_state++;
                 }
-                cut_frequency(spectrum, 3000, 18000, frequency, fftSize);
+                //cut_frequency(spectrum, 3000, 18000, frequency, fftSize);
                 //to draw using handler by sending msg
                 Message msg = handlerMeasure.obtainMessage();
                 msg.what=2;
@@ -613,7 +626,7 @@ public class MainActivity extends AppCompatActivity {
             while (dis.available() > 0) {
                 music[i] = dis.readShort();
                 if(i%200==0){
-                    Log.d(TAG,"music["+i+"]="+music[i]);
+                    //Log.d(TAG,"music["+i+"]="+music[i]);
                 }
                 i++;
             }
