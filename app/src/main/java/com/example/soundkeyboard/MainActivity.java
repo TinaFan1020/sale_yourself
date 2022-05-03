@@ -443,7 +443,18 @@ public class MainActivity extends AppCompatActivity {
                 do fft
                  */
                 transformer.ft(toTransform);
+
+                /*
+                do cut off frequency cut off frequency lower than lower and bigger than upeer
+                 */
+
+                toTransform=to_transform_cut_frequency(toTransform,3000,19000,frequency,fftSize);
+
+                /*
+
+                 */
                 double[] spectrum;
+                //to calculate spectrum
                 if (toTransform.length % 2 != 0) {// if odd
                     spectrum = new double[(toTransform.length + 1) / 2];
                     re=new double[(toTransform.length + 1) / 2];
@@ -452,14 +463,13 @@ public class MainActivity extends AppCompatActivity {
                     re[0]=toTransform[0];//real part of first complex fft coeffient is x[0]
                     im[0]=0;
                     magnitude[0]=re[0]*re[0];
-                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc
-                    // component
-                    for (int index = 1; index < toTransform.length; index = index + 2) {
+                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc component
+                    for (int index = 1; index < toTransform.length; index = index + 2) {//i=1 3 5...
                         // magnitude =re*re + im*im
                         double mag = toTransform[index] * toTransform[index]
                                 + toTransform[index + 1] * toTransform[index + 1];
-                        re[(index + 1) / 2]=toTransform[index];
-                        im[(index+1)/2]=toTransform[index+1];
+                        re[(index + 1) / 2]=toTransform[index];//when index=1 3 5... i=1 2 3..
+                        im[(index+1)/2]=toTransform[index+1];//index=2 4 6...i=1 2 3..
                         magnitude[(index+1)/2]=Math.sqrt(mag);
                         spectrum[(index + 1) / 2] = Math.pow(mag, 0.5);
                     }
@@ -474,12 +484,12 @@ public class MainActivity extends AppCompatActivity {
                     spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc
                     // component.
                     // real only
-                    for (int index = 1; index < toTransform.length - 1; index = index + 2) {
+                    for (int index = 1; index < toTransform.length - 1; index = index + 2) {//index=1 3 5.. i=1 2 3...
                         // magnitude =re*re + im*im
                         double mag = toTransform[index] * toTransform[index]
                                 + toTransform[index + 1] * toTransform[index + 1];
-                        re[(index + 1) / 2]=toTransform[index];
-                        im[(index+1)/2]=toTransform[index+1];
+                        re[(index + 1) / 2]=toTransform[index];//index=1 3 5..i=1 2 3
+                        im[(index+1)/2]=toTransform[index+1];//index=2 4 6..i=1 2 3
                         magnitude[(index+1)/2]=Math.sqrt(mag);
                         spectrum[(index + 1) / 2] = Math.pow(mag, 0.5);
                     }
@@ -505,13 +515,25 @@ public class MainActivity extends AppCompatActivity {
 
                 //do inverse fft
                 transformer.bt(toTransform);
+
                 //Log.i(TAG,"to trans form len after inv fft="+toTransform.length);
                 int tmp_stat=0;
-
+                /* debug
                 for(int i=0;i<toTransform.length;i++)
                 {
                     if(i==2000)Log.i(TAG,"coeff "+i+ " after inv fft="+toTransform[i]);
-                    if(i>4096&&toTransform[i]>1)Log.i(TAG,"coeff "+i+ " !!!this should not >1"+toTransform[i]);
+                    //if(i>4096&&toTransform[i]>0.5)Log.i(TAG,"coeff "+i+ " !!!this should not >1"+toTransform[i]);
+                }
+                */
+
+                /*
+                trying to write transformed data into pcm file
+                 */
+                for(int i=0;i<bufferSize;i++)
+                {
+                    short tmp=(short)Math.round(toTransform[i]);
+                    dos.writeShort(tmp);
+                    if(i==2000)Log.i(TAG,"tmp "+i+ " tmp=="+tmp);
                 }
 
                 //end of do inverse fft
@@ -696,6 +718,7 @@ public class MainActivity extends AppCompatActivity {
     }
     //given input spectrum set frequcncy between lower upper =0
     //most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
+    //affect on only spectrum not fft data itself
     private double[] cut_frequency(double[] spectrum ,int lower_bound,int upper_bound,int frequency,int fftsize)
     {
         int len=spectrum.length;
@@ -708,6 +731,24 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return spectrum;
+    }
+//use it after fft
+//affect on fft data itself
+    private double[] to_transform_cut_frequency(double[] toTransform ,int lower_bound,int upper_bound,int frequency,int fftsize) {
+        int len = toTransform.length;
+
+
+            for (int index = 1; index < len; index = index + 2)
+            {//index=1 3 5... i=1 2 3(index+1)/2...
+                int i = (index + 1) / 2;
+                double freq = (double)((double)frequency * (double)i)/(double)(fftsize);
+                if(freq>=lower_bound-10&&freq<=upper_bound+10)
+                {
+                    toTransform[index]=0;
+                    toTransform[index+1]=0;
+                }
+            }
+            return toTransform;
     }
 
 
