@@ -224,7 +224,6 @@ public class MainActivity extends AppCompatActivity {
                 case 1:
                     int amp = recorder.getMaxAmplitude();
                     //公式：Gdb = 20log10(V1/V0)
-                    //Google已提供方法幫你取得麥克風的檢測電壓(V1)以及參考電壓(V0)
                     double db = 20 * (Math.log10(Math.abs(amp)));
                     cnt++;
                     //media_total+=amp;
@@ -258,7 +257,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                         imageView.invalidate();
 
-
                     break;
 
             }
@@ -284,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
         endMediaRecording();
     }
 
-    private void play() {
+    private void play() {//not using
         player = new MediaPlayer();
         try {
             player.setDataSource(tmpfile);
@@ -379,6 +377,7 @@ public class MainActivity extends AppCompatActivity {
                 int audio_total=0;
                 looptimes++;
                 int bufferReadResult = audioRecord.read(buffer, 0, bufferSize);
+
                 int localmin=0x3f3f3f3f;
                 int localmax=-0x3f3f3f3f;
                 int localzeros=0;
@@ -400,8 +399,6 @@ public class MainActivity extends AppCompatActivity {
                 //read data from mic and predict strokes
                 for (int i = 0; i < bufferReadResult; i++  ) {
                     //double db = 20 * (Math.log10(Math.abs(buffer[i])));
-
-                    //if(looptimes==5) Log.i("special","i="+i+"buffer="+buffer[i]);
                     lastpos=ispos;
 
                     if(buffer[i]>0) {ispos=1;pos_total_local+=buffer[i];pos_cnt_local++;pos_cnt_global++;pos_total_global+=buffer[i];}
@@ -418,13 +415,10 @@ public class MainActivity extends AppCompatActivity {
                     if(buffer[i]==0) localzeros++;
                     if(localmax<buffer[i]) localmax=buffer[i];
                     if(localmin>buffer[i]) localmin=buffer[i];
-                    //if(i%200==0)Log.i(TAG,"buffer["+i+"]content="+buffer[i]+"avg="+audio_avg);
-                    //this is where we write into pcm
+
                     if(i==2000) Log.i(TAG,"buffreadreult="+bufferReadResult+"i= "+i+" buffer[i]="+buffer[i]);
-                    //dos.writeShort(buffer[i]);
-                    //
                     /*
-                    put data into fft array
+                    put data into fft array !important!
                      */
                     toTransform[i] = (double) buffer[i] / 32768.0;
                 };
@@ -447,8 +441,9 @@ public class MainActivity extends AppCompatActivity {
                 /*
                 do cut off frequency cut off frequency lower than lower and bigger than upeer
                  */
-
-                toTransform=to_transform_cut_frequency(toTransform,3000,19000,frequency,fftSize);
+                int lower=3000;
+                int upper=19000;
+                toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
 
                 /*
 
@@ -481,9 +476,7 @@ public class MainActivity extends AppCompatActivity {
                     re[0]=toTransform[0];//real part of first complex fft coeffient is x[0]
                     im[0]=0;
                     magnitude[0]=re[0]*re[0];
-                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc
-                    // component.
-                    // real only
+                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc component real only
                     for (int index = 1; index < toTransform.length - 1; index = index + 2) {//index=1 3 5.. i=1 2 3...
                         // magnitude =re*re + im*im
                         double mag = toTransform[index] * toTransform[index]
@@ -493,7 +486,6 @@ public class MainActivity extends AppCompatActivity {
                         magnitude[(index+1)/2]=Math.sqrt(mag);
                         spectrum[(index + 1) / 2] = Math.pow(mag, 0.5);
                     }
-                    // dc component. real only
                     spectrum[spectrum.length - 1] = Math.pow(toTransform[toTransform.length - 1]
                             * toTransform[toTransform.length - 1], 0.5);
                     re[re.length - 1]=toTransform[toTransform.length - 1];
@@ -515,7 +507,6 @@ public class MainActivity extends AppCompatActivity {
 
                 //do inverse fft
                 transformer.bt(toTransform);
-
                 //Log.i(TAG,"to trans form len after inv fft="+toTransform.length);
                 int tmp_stat=0;
                 /* debug
@@ -549,6 +540,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
                 //Log.i(TAG,"Most freq="+most_freq);
+
                 //three state counter if recently detected block for a moment to prevent error
                 if(stroke_state==0)
                 {
@@ -572,6 +564,7 @@ public class MainActivity extends AppCompatActivity {
                     else stroke_state++;
                 }
                 //cut_frequency(spectrum, 3000, 18000, frequency, fftSize);
+
                 //to draw using handler by sending msg
                 Message msg = handlerMeasure.obtainMessage();
                 msg.what=2;
@@ -589,11 +582,13 @@ public class MainActivity extends AppCompatActivity {
                 {
                     detected_already=false;
                 }
-                */
+
 
                 //Log.i(TAG,"looptimes="+looptimes+" max= "+localmax+"min= "+localmin);
                 //Log.i(TAG,"looptimes"+looptimes+" loczlzeros="+localzeros+" zerocross= "+zerocross);
                 //Log.i(TAG,"looptimes="+looptimes+"pos avg local="+pos_avg_local);
+                */
+
             }
             audioRecord.stop();
             dos.close();
