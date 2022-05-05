@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Sound Keyboard</string>
+    <string name="btn_stop_frequency">Button</string>
+    <string name="start_play">Start Play</string>
+    <string name="stop_play">Stop Play</string>
+    <string name="please_enter_the_frequency">please enter the frequency</string>
 </resources>
