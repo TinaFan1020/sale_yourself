@@ -23,12 +23,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -59,18 +57,15 @@ import android.widget.ImageView;
 
 import jfftpack.RealDoubleFFT;
 
-import com.karlotoy.perfectune.instance.PerfectTune;
-
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
-    Button btn_media_start, btn_media_stop, btn_media_play,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window,btn_play_frequency,btn_stop_frequency;
+    Button btn_media_start, btn_media_stop, btn_media_play,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window;
     ImageView imageView;
     TextView txt_out;
     Bitmap bitmap;
     Canvas canvas;
     Paint paint;
-    EditText frequency;
     private String tmpfile;
     private final static String TAG = "MyTag";
     int cnt = 0;
@@ -91,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
     File RF;
     File file;
     int dowindow=1;//用來開關window func 1是開 0是關
-    PerfectTune perfectTune = new PerfectTune();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,9 +101,6 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_stop=findViewById(R.id.btn_audio_end);
         btn_audio_play=findViewById(R.id.btn_audio_play);
         btn_toggle_window=findViewById(R.id.btn_toggle_window);
-        btn_play_frequency=findViewById(R.id.btn_play_frequency);
-        btn_stop_frequency=findViewById(R.id.btn_stop_frequency);
-        frequency=findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
         btn_media_start.setOnClickListener(v -> startMediaRecording());
         btn_media_stop.setOnClickListener(v -> endMediaRecording());
@@ -117,8 +109,6 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_stop.setOnClickListener(v->onclick_audio_stop());
         btn_audio_play.setOnClickListener(v->onclick_audio_play());
         btn_toggle_window.setOnClickListener(v->toggle());
-        btn_play_frequency.setOnClickListener(v->onlick_frequency_play());
-        btn_stop_frequency.setOnClickListener(v->onlick_frequency_stop());
         bitmap = Bitmap.createBitmap((int)4096,(int)1000,Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bitmap);
         paint= new Paint();
@@ -130,22 +120,7 @@ public class MainActivity extends AppCompatActivity {
         //tmpfile += "/audiorecordtest.3gp";
         //Log.i(TAG, "file path= " + tmpfile);
         imageView.invalidate();
-        perfectTune.setTuneFreq(15000);
-        perfectTune.setTuneAmplitude(50000);
 
-    }
-
-    private void onlick_frequency_stop() {
-        perfectTune.stopTune();
-    }
-
-    private void onlick_frequency_play() {
-        String num = frequency.getText().toString();
-        if(TextUtils.isEmpty(num)){
-            num= "15000";
-        }
-        perfectTune.setTuneFreq(Integer.valueOf(num));
-        perfectTune.playTune();//stops the tune
     }
 
     private void endMediaRecording() {
