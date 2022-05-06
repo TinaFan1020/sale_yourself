@@ -550,6 +550,7 @@ public class MainActivity extends AppCompatActivity {
                     short tmp=(short)Math.round(toTransform[i]);
                     dos.writeShort(tmp);
                     if(i==2000)Log.i(TAG,"tmp "+i+ " tmp=="+tmp);
+                    //if(i==2000)Log.i(TAG,"tmp "+i+ " spectrum=="+spectrum[i]);
                 }
 
                 //end of do inverse fft
@@ -562,9 +563,11 @@ public class MainActivity extends AppCompatActivity {
                         peak = Math.abs(spectrum[i]);
                         peak_location = i;
                     }
+                    if(spectrum[i]>=1)Log.i(TAG,"tmp "+i+ " spectrum=="+spectrum[i]);
+
                 }
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
-                //Log.i(TAG,"Most freq="+most_freq);
+                Log.i(TAG,"Most freq="+most_freq);
 
                 //three state counter if recently detected block for a moment to prevent error
                 if(stroke_state==0)
