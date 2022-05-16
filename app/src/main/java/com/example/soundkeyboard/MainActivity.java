@@ -59,6 +59,10 @@ import android.widget.ImageView;
 
 import jfftpack.RealDoubleFFT;
 
+import Catalano.Math.*;
+
+
+
 import com.karlotoy.perfectune.instance.PerfectTune;
 
 
@@ -71,8 +75,12 @@ public class MainActivity extends AppCompatActivity {
     Canvas canvas;
     Paint paint;
     EditText frequency;
+    ComplexNumber test = new ComplexNumber();
+    double tt=test.imaginary;
+
     private String tmpfile;
     private final static String TAG = "MyTag";
+
     int cnt = 0;
     private MediaRecorder recorder;//錄音ㄉ
     private MediaPlayer player;//播放ㄉ
@@ -97,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "onCreate:123");
+        Log.i(TAG, "test="+tt);
         setContentView(R.layout.activity_main);
         checkPermission();
         btn_media_start = findViewById(R.id.btn_media_record);
