@@ -57,9 +57,11 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import Catalano.Math.ComplexNumber;
+import Catalano.Math.Transforms.FourierTransform;
 import jfftpack.RealDoubleFFT;
 
-import Catalano.Math.*;
+import  Catalano.Math.Transforms.HilbertTransform;
 
 
 
@@ -68,16 +70,13 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
-    Button btn_media_start, btn_media_stop, btn_media_play,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window,btn_play_frequency,btn_stop_frequency;
+    Button btn_toggle_draw,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window,btn_play_frequency,btn_stop_frequency;
     ImageView imageView;
     TextView txt_out;
     Bitmap bitmap;
     Canvas canvas;
     Paint paint;
     EditText frequency;
-    ComplexNumber test = new ComplexNumber();
-    double tt=test.imaginary;
-
     private String tmpfile;
     private final static String TAG = "MyTag";
 
@@ -99,33 +98,36 @@ public class MainActivity extends AppCompatActivity {
     File RF;
     File file;
     int dowindow=1;//用來開關window func 1是開 0是關
+    int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
     PerfectTune perfectTune = new PerfectTune();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "onCreate:123");
-        Log.i(TAG, "test="+tt);
+
         setContentView(R.layout.activity_main);
         checkPermission();
-        btn_media_start = findViewById(R.id.btn_media_record);
-        btn_media_stop = findViewById(R.id.btn_media_end);
-        btn_media_play = findViewById(R.id.btn_media_play);
+        //btn_media_start = findViewById(R.id.btn_media_record);
+        //btn_media_stop = findViewById(R.id.btn_media_end);
+        //btn_media_play = findViewById(R.id.btn_media_play);
         btn_audio_record=findViewById(R.id.btn_audio_record);
         btn_audio_stop=findViewById(R.id.btn_audio_end);
         btn_audio_play=findViewById(R.id.btn_audio_play);
         btn_toggle_window=findViewById(R.id.btn_toggle_window);
         btn_play_frequency=findViewById(R.id.btn_play_frequency);
         btn_stop_frequency=findViewById(R.id.btn_stop_frequency);
+        btn_toggle_draw=findViewById(R.id.btn_toggle_draw);
         frequency=findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
-        btn_media_start.setOnClickListener(v -> startMediaRecording());
-        btn_media_stop.setOnClickListener(v -> endMediaRecording());
-        btn_media_play.setOnClickListener(v -> play());
+        //btn_media_start.setOnClickListener(v -> startMediaRecording());
+        //btn_media_stop.setOnClickListener(v -> endMediaRecording());
+        //btn_media_play.setOnClickListener(v -> play());
         btn_audio_record.setOnClickListener(v->onclick_audio_start());
         btn_audio_stop.setOnClickListener(v->onclick_audio_stop());
         btn_audio_play.setOnClickListener(v->onclick_audio_play());
         btn_toggle_window.setOnClickListener(v->toggle());
+        btn_toggle_draw.setOnClickListener(v->toggledarw());
         btn_play_frequency.setOnClickListener(v->onlick_frequency_play());
         btn_stop_frequency.setOnClickListener(v->onlick_frequency_stop());
         bitmap = Bitmap.createBitmap((int)4096,(int)1000,Bitmap.Config.ARGB_8888);
@@ -292,6 +294,37 @@ public class MainActivity extends AppCompatActivity {
                         imageView.invalidate();
 
                     break;
+                case 3:
+                    short tmp3[]=(short[]) msg.obj;
+                    //Log.i(TAG,"okhere");
+                    canvas.drawColor(Color.BLACK);
+                    canvas.drawCircle(0,500-tmp3[0]/10,6,paint);
+
+                    for(int i=1;i<tmp3.length;i++)
+                    {
+                        canvas.drawCircle(i,500-tmp3[i]/10,6,paint);
+                        //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
+
+                    }
+                    imageView.invalidate();
+
+                    break;
+
+                case 4:
+                    ComplexNumber tmp4[]=(ComplexNumber[]) msg.obj;
+                    canvas.drawColor(Color.BLACK);
+                    for(int i=0;i<tmp4.length;i++)
+                    {
+                        //i is green q is red
+                        paint.setColor(Color.GREEN);
+                        canvas.drawCircle(i,500-(float)tmp4[i].real/10,6,paint);
+                        paint.setColor(Color.RED);
+                        canvas.drawCircle(i,500-(float)tmp4[i].imaginary/20,6,paint);
+
+                    }
+                    imageView.invalidate();
+                    break;
+
 
             }
             super.handleMessage(msg);
@@ -349,6 +382,7 @@ public class MainActivity extends AppCompatActivity {
         //for fft
         RealDoubleFFT transformer;
 
+
 //16K採集率
         int frequency = 44100;
 //格式
@@ -401,7 +435,9 @@ public class MainActivity extends AppCompatActivity {
             double[] re;
             double[] im;
             double[] magnitude;
-
+            ComplexNumber[] complexBuffer = new ComplexNumber[bufferSize];
+            for (int i = 0; i < bufferSize; i++)//init of complex data array
+                complexBuffer[i] = new ComplexNumber(0, 0);
             audioRecord.startRecording();
             Log.i(TAG, "開始錄音");
             isRecording = true;
@@ -426,6 +462,7 @@ public class MainActivity extends AppCompatActivity {
                 double pos_avg_local=0;
                 double neg_avg_local=0;
                 //Log.i(TAG, "read result"+bufferReadResult);
+                //zero out data of previous loop and init
                 for(int i=0;i<bufferSize*2;i++)
                 {
                     toTransform[i]=0;
@@ -455,6 +492,9 @@ public class MainActivity extends AppCompatActivity {
                     put data into fft array !important!
                      */
                     toTransform[i] = (double) buffer[i] / 32768.0;
+                    //put data into complex array
+                    complexBuffer[i].real=buffer[i];
+                    complexBuffer[i].imaginary=0;
                 };
                 pos_avg_local=pos_total_local/pos_cnt_local;
                 pos_avg_global=pos_total_global/pos_cnt_global;
@@ -472,8 +512,11 @@ public class MainActivity extends AppCompatActivity {
                  */
                 transformer.ft(toTransform);
 
+                //do hilbert transform
+                HilbertTransform.FHT(complexBuffer, FourierTransform.Direction.Forward);
+                //after hilbert transform the real part is i signal and imaginary part is q signal
                 /*
-                do cut off frequency cut off frequency lower than lower and bigger than upeer
+                do cut off frequency cut off frequency lower than lower and bigger than upper
                  */
                 int lower=3000;
                 int upper=19000;
@@ -558,7 +601,7 @@ public class MainActivity extends AppCompatActivity {
                 {
                     short tmp=(short)Math.round(toTransform[i]);
                     dos.writeShort(tmp);
-                    if(i==2000)Log.i(TAG,"tmp "+i+ " tmp=="+tmp);
+                    //if(i==2000)Log.i(TAG,"tmp "+i+ " tmp=="+tmp);
                     //if(i==2000)Log.i(TAG,"tmp "+i+ " spectrum=="+spectrum[i]);
                 }
 
@@ -604,9 +647,26 @@ public class MainActivity extends AppCompatActivity {
 
                 //to draw using handler by sending msg
                 Message msg = handlerMeasure.obtainMessage();
-                msg.what=2;
-                msg.obj=spectrum;
-                handlerMeasure.sendMessage(msg);
+                if(dodraw==0)
+                {//draw spectrum
+                    msg.what = 2;
+                    msg.obj = spectrum;
+                    handlerMeasure.sendMessage(msg);
+                }else if(dodraw==1)//draw input data
+                {
+                    msg.what = 3;
+
+                    msg.obj = buffer;
+
+                    handlerMeasure.sendMessage(msg);
+
+
+                }else if(dodraw==2)//draw i/q signal
+                {
+                    msg.what = 4;
+                    msg.obj = complexBuffer;
+                    handlerMeasure.sendMessage(msg);
+                }
 
                 /*
                 if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0)
@@ -746,6 +806,14 @@ public class MainActivity extends AppCompatActivity {
         if(dowindow==2) {dowindow=0;txt_out.setText("window close"); return;}
         if(dowindow==1) {dowindow=2;txt_out.setText("window hamming v2"); return;}
         if(dowindow==0) {dowindow=1;txt_out.setText("window hanning v1");return;}
+
+    }
+    private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
+    {
+
+        if(dodraw==2) {dodraw=0;txt_out.setText("draw spectrum"); return;}
+        if(dodraw==1) {dodraw=2;txt_out.setText("draw i/q signal"); return;}
+        if(dodraw==0) {dodraw=1;txt_out.setText("draw input data");return;}
 
     }
     //given input spectrum set frequcncy between lower upper =0

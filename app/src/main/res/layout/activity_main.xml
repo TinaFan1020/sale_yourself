@@ -20,50 +20,16 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/btn_media_record"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="media record"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.181"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.672" />
-
-    <Button
-        android:id="@+id/btn_media_end"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="media End"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.583"
-        app:layout_constraintStart_toEndOf="@+id/btn_media_record"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.672" />
-
-    <Button
-        android:id="@+id/btn_media_play"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="media play"
-        app:layout_constraintBottom_toTopOf="@+id/txt_out"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
         android:id="@+id/btn_audio_record"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="audio record"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.169"
+        app:layout_constraintHorizontal_bias="0.184"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_media_record"
-        app:layout_constraintVertical_bias="0.232" />
+        app:layout_constraintTop_toTopOf="@+id/ImageView01"
+        app:layout_constraintVertical_bias="0.802" />
 
     <Button
         android:id="@+id/btn_audio_end"
@@ -72,10 +38,10 @@
         android:text="audio end"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.571"
+        app:layout_constraintHorizontal_bias="0.574"
         app:layout_constraintStart_toEndOf="@+id/btn_audio_record"
-        app:layout_constraintTop_toBottomOf="@+id/btn_media_end"
-        app:layout_constraintVertical_bias="0.232" />
+        app:layout_constraintTop_toTopOf="@+id/ImageView01"
+        app:layout_constraintVertical_bias="0.802" />
 
     <Button
         android:id="@+id/btn_audio_play"
@@ -84,14 +50,12 @@
         android:text="audio play"
         app:layout_constraintBottom_toTopOf="@+id/txt_out"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_media_play" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
         android:id="@+id/ImageView01"
         android:layout_width="315dp"
         android:layout_height="133dp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_media_play"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -152,5 +116,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/frequency_num"
         app:layout_constraintVertical_bias="0.0" />
+
+    <Button
+        android:id="@+id/btn_toggle_draw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="toggle drawing"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/ImageView01"
+        app:layout_constraintVertical_bias="0.692" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
