@@ -71,31 +71,24 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
     Button btn_toggle_draw,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window,btn_play_frequency,btn_stop_frequency;
-    ImageView imageView;
-    TextView txt_out;
-    Bitmap bitmap;
-    Canvas canvas;
-    Paint paint;
-    EditText frequency;
+    ImageView imageView;//最上面畫畫ㄉ
+    TextView txt_out;//中間顯示字ㄉ
+    Bitmap bitmap;//最上面畫畫ㄉ
+    Canvas canvas;//最上面畫畫ㄉ
+    Paint paint;//最上面畫畫ㄉ
+    EditText frequency_text;//命名撞到 我改了變數名
     private String tmpfile;
     private final static String TAG = "MyTag";
 
     int cnt = 0;
-    private MediaRecorder recorder;//錄音ㄉ
-    private MediaPlayer player;//播放ㄉ
     double[] toTransform;//用來放要拿去fftㄉdata
     double most_freq=0.0;//fft出來最大ㄉ頻率
-    int media_strokes=0;
-    int media_avg=0;
     //////
-    int quite_avg=90;//note:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
-    int stroke_power_max=500;//note:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
-    int stroke_power_min=150;//note:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
-    //note:之後測試標準差以及變異數
+    int quite_avg=90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
+    int stroke_power_max=500;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
+    int stroke_power_min=150;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
+    //todo:之後測試標準差以及變異數對於偵測的效用
     /////
-    //double media_avg2=0;
-    //int media_total=0;
-    File RF;
     File file;
     int dowindow=1;//用來開關window func 1是開 0是關
     int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
@@ -105,12 +98,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "onCreate:123");
-
         setContentView(R.layout.activity_main);
         checkPermission();
-        //btn_media_start = findViewById(R.id.btn_media_record);
-        //btn_media_stop = findViewById(R.id.btn_media_end);
-        //btn_media_play = findViewById(R.id.btn_media_play);
+        //按鈕的宣告
         btn_audio_record=findViewById(R.id.btn_audio_record);
         btn_audio_stop=findViewById(R.id.btn_audio_end);
         btn_audio_play=findViewById(R.id.btn_audio_play);
@@ -118,11 +108,8 @@ public class MainActivity extends AppCompatActivity {
         btn_play_frequency=findViewById(R.id.btn_play_frequency);
         btn_stop_frequency=findViewById(R.id.btn_stop_frequency);
         btn_toggle_draw=findViewById(R.id.btn_toggle_draw);
-        frequency=findViewById(R.id.frequency_num);
+        frequency_text=findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
-        //btn_media_start.setOnClickListener(v -> startMediaRecording());
-        //btn_media_stop.setOnClickListener(v -> endMediaRecording());
-        //btn_media_play.setOnClickListener(v -> play());
         btn_audio_record.setOnClickListener(v->onclick_audio_start());
         btn_audio_stop.setOnClickListener(v->onclick_audio_stop());
         btn_audio_play.setOnClickListener(v->onclick_audio_play());
@@ -130,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
         btn_toggle_draw.setOnClickListener(v->toggledarw());
         btn_play_frequency.setOnClickListener(v->onlick_frequency_play());
         btn_stop_frequency.setOnClickListener(v->onlick_frequency_stop());
+        //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
         bitmap = Bitmap.createBitmap((int)4096,(int)1000,Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bitmap);
         paint= new Paint();
@@ -137,9 +125,7 @@ public class MainActivity extends AppCompatActivity {
         imageView = (ImageView) this.findViewById(R.id.ImageView01);
         imageView.setImageBitmap(bitmap);
         tmpfile = getExternalCacheDir().getAbsolutePath();
-        Log.i(TAG,"pid= "+Thread.currentThread().getId());
-        //tmpfile += "/audiorecordtest.3gp";
-        //Log.i(TAG, "file path= " + tmpfile);
+        Log.i(TAG,"pid of main thread= "+Thread.currentThread().getId());
         imageView.invalidate();
         perfectTune.setTuneFreq(15000);
         perfectTune.setTuneAmplitude(50000);
@@ -151,24 +137,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onlick_frequency_play() {
-        String num = frequency.getText().toString();
+        String num = frequency_text.getText().toString();
         if(TextUtils.isEmpty(num)){
             num= "15000";
         }
         perfectTune.setTuneFreq(Integer.valueOf(num));
         perfectTune.playTune();//stops the tune
-    }
-
-    private void endMediaRecording() {
-        if (!hasmic || !isRecording) return;
-        handlerMeasure.removeCallbacks(taskMeasure);
-        try {
-            recorder.stop();
-            recorder.release();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
-        isRecording = false;
     }
 
     /**
@@ -190,10 +164,6 @@ public class MainActivity extends AppCompatActivity {
             }
             if (!hasread) {
                 this.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
-            }
-            if(hasread)
-            {
-                Log.i(TAG,"has read");
             }
         }
 
@@ -220,44 +190,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startMediaRecording() {
-        if (!hasmic || isRecording) return;
-        txt_out.setText("start");
-        media_strokes=0;
-        cnt=0;
-        recorder = new MediaRecorder();
-        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        /*
-        try {
-            RF = File.createTempFile("raw", ".amr", Environment.getExternalStorageDirectory());
-            Log.i(TAG, "6969path = " +
 
-                    RF.getAbsolutePath());
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
-        try {
-            recorder.setOutputFile(tmpfile);
-            recorder.prepare();
-            recorder.start();
-            isRecording = true;
-            handlerMeasure.post(taskMeasure);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
+    //這邊是用來更新ui的內容 因位子thread不能更新主ui
     @SuppressLint("HandlerLeak")
     private Handler handlerMeasure = new Handler() {
         @Override
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
-                case 1:
+                case 1://不再使用
+                    /*
                     int amp = recorder.getMaxAmplitude();
                     //公式：Gdb = 20log10(V1/V0)
                     double db = 20 * (Math.log10(Math.abs(amp)));
@@ -278,6 +219,10 @@ public class MainActivity extends AppCompatActivity {
                     //Log.i(TAG, "handler thread id = " +
 
                             //Thread.currentThread().getId());
+
+
+                     */
+                    Log.i(TAG,"THIS PART IS NO LONGER USED");
                     break;
                 case 2:
                     //for drawing;
@@ -296,13 +241,11 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case 3:
                     short tmp3[]=(short[]) msg.obj;
-                    //Log.i(TAG,"okhere");
                     canvas.drawColor(Color.BLACK);
-                    canvas.drawCircle(0,500-tmp3[0]/10,6,paint);
 
-                    for(int i=1;i<tmp3.length;i++)
+                    for(int i=0;i<tmp3.length;i++)
                     {
-                        canvas.drawCircle(i,500-tmp3[i]/10,6,paint);
+                        canvas.drawCircle(i,500-tmp3[i]/10,6,paint);//用畫多個圓的方式得到更好效能
                         //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
 
                     }
@@ -325,52 +268,17 @@ public class MainActivity extends AppCompatActivity {
                     imageView.invalidate();
                     break;
 
-
             }
             super.handleMessage(msg);
 
         }
     };
-    private Runnable taskMeasure = new Runnable() {
-        @Override
-        public void run() {
-            handlerMeasure.sendEmptyMessage(1);
-            //每100毫秒抓取一次檢測結果
-            handlerMeasure.postDelayed(this, 100);
-            //Log.i(TAG, "workRunnable thread id = " +
 
-            //        Thread.currentThread().getId());
-        }
-    };
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        endMediaRecording();
-    }
-
-    private void play() {//not using
-        player = new MediaPlayer();
-        try {
-            player.setDataSource(tmpfile);
-            player.prepare();
-            player.start();
-        } catch (IOException e) {
-            Log.e(TAG, "prepare() failed");
-        }
-        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer MP) {
-                MP.stop();
-                MP.release();
-            }
-        });
-
-    }
-
-    //開始錄音
-    public void StartAudioRecord() {
+    public void StartAudioRecord() {//錄音的函式 還有處理資料也在這裡
         Log.i(TAG, "開始錄音");
+        ////////////////////////////
+        //此處都是關於按鍵聲偵測的變數 但是此處會有overflow的問題且準度不精確
         double audio_avg_global=0;
         int audio_cnt_global=0;
         double pos_avg_global=0;
@@ -379,6 +287,7 @@ public class MainActivity extends AppCompatActivity {
         int pos_cnt_global=0;
         int stroke_cnt=0;
         int stroke_state=0;
+        ////////////////////////////
         //for fft
         RealDoubleFFT transformer;
 
@@ -413,11 +322,12 @@ public class MainActivity extends AppCompatActivity {
             OutputStream os = new FileOutputStream(file);
             BufferedOutputStream bos = new BufferedOutputStream(os);
             DataOutputStream dos = new DataOutputStream(bos);
-            //int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);
-            int bufferSize=4096;// set as power of 2 for fft
-            int fftSize=bufferSize*2;
+            //int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);//這會得到最小所需buffersize 但要用2的次方大小
+            int bufferSize=4096;// set as power of 2 for fft 這是每個迴圈取的資料點 每個迴圈約等於0.09秒
+            int fftSize=bufferSize*2;//丟進去做fft的大小 是buffer的兩倍 為了讓fft中的運作與buffer對齊
             transformer = new RealDoubleFFT(bufferSize*2);//!
-            //Log.i(TAG,"buffer size="+bufferSize);
+
+            //這邊是必要的權限檢查 不能刪 不然java不讓過
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 checkPermission();
             }
@@ -429,8 +339,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
-            short[] buffer = new short[bufferSize];
-            toTransform = new double[bufferSize*2];//!
+            short[] buffer = new short[bufferSize];//用來儲存原始音訊資料
+            toTransform = new double[bufferSize*2];//用來儲存要放進fft的資料
             //to calculate data after fft
             double[] re;
             double[] im;
@@ -443,10 +353,12 @@ public class MainActivity extends AppCompatActivity {
             isRecording = true;
             int looptimes=0;
             while (isRecording) {
-                //Log.i(TAG, "is recording");
                 int audio_total=0;
                 looptimes++;
                 int bufferReadResult = audioRecord.read(buffer, 0, bufferSize);
+
+                ////////////////////////////
+                //此處都是關於按鍵聲偵測的變數 此處的變數都只用在一次迴圈中資料的統計 而不是從程式開始執行到現在的統計
 
                 int localmin=0x3f3f3f3f;
                 int localmax=-0x3f3f3f3f;
@@ -461,7 +373,8 @@ public class MainActivity extends AppCompatActivity {
                 int neg_total_local=0;
                 double pos_avg_local=0;
                 double neg_avg_local=0;
-                //Log.i(TAG, "read result"+bufferReadResult);
+                //////////////////////////
+
                 //zero out data of previous loop and init
                 for(int i=0;i<bufferSize*2;i++)
                 {
@@ -487,9 +400,9 @@ public class MainActivity extends AppCompatActivity {
                     if(localmax<buffer[i]) localmax=buffer[i];
                     if(localmin>buffer[i]) localmin=buffer[i];
 
-                    if(i==2000) Log.i(TAG,"buffreadreult="+bufferReadResult+"i= "+i+" buffer[i]="+buffer[i]);
+                    //if(i==2000) Log.i(TAG,"buffreadreult="+bufferReadResult+"i= "+i+" buffer[i]="+buffer[i]);
                     /*
-                    put data into fft array !important!
+                    put data into fft array
                      */
                     toTransform[i] = (double) buffer[i] / 32768.0;
                     //put data into complex array
@@ -504,7 +417,7 @@ public class MainActivity extends AppCompatActivity {
                 */
                 if(dowindow>0) {
                     double window[] = new double[bufferSize * 2];
-                    window = hanning(bufferSize * 2);
+                    window = hanning(bufferSize * 2);//產生適當的window
                     toTransform = applyWindowFunc(toTransform, window);
                 }
                 /*
@@ -515,12 +428,14 @@ public class MainActivity extends AppCompatActivity {
                 //do hilbert transform
                 HilbertTransform.FHT(complexBuffer, FourierTransform.Direction.Forward);
                 //after hilbert transform the real part is i signal and imaginary part is q signal
+
                 /*
                 do cut off frequency cut off frequency lower than lower and bigger than upper
                  */
-                int lower=3000;
-                int upper=19000;
-                toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
+                //todo:這邊要做調整截斷頻率的東西
+                //int lower=3000;
+                //int upper=19000;
+               // toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
 
                 /*
 
@@ -571,20 +486,10 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //after fft the real part is stored in index 1,3,5....(n/2)-1
                 // Calculate the Real and imaginary and Magnitude.
-                /*this is wrong
-                for(int i = 0; i < bufferSize; i++){
-                    // real is stored in first part of array
-                    re[i] = toTransform[i*2];
-                    // imaginary is stored in the sequential part
-                    im[i] = toTransform[(i*2)+1];
-                    // magnitude is calculated by the square root of (imaginary^2 + real^2)
-                    magnitude[i] = Math.sqrt((re[i] * re[i]) + (im[i]*im[i]));
-                }
-                */
 
                 //do inverse fft
                 transformer.bt(toTransform);
-                //Log.i(TAG,"to trans form len after inv fft="+toTransform.length);
+
                 int tmp_stat=0;
                 /* debug
                 for(int i=0;i<toTransform.length;i++)
@@ -595,14 +500,12 @@ public class MainActivity extends AppCompatActivity {
                 */
 
                 /*
-                trying to write transformed data into pcm file
+                trying to write transformed data into pcm file 音訊檔的內容是經過fft和反fft轉換的 會損壞音質
                  */
                 for(int i=0;i<bufferSize;i++)
                 {
                     short tmp=(short)Math.round(toTransform[i]);
                     dos.writeShort(tmp);
-                    //if(i==2000)Log.i(TAG,"tmp "+i+ " tmp=="+tmp);
-                    //if(i==2000)Log.i(TAG,"tmp "+i+ " spectrum=="+spectrum[i]);
                 }
 
                 //end of do inverse fft
@@ -619,7 +522,7 @@ public class MainActivity extends AppCompatActivity {
 
                 }
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
-                Log.i(TAG,"Most freq="+most_freq);
+                //Log.i(TAG,"Most freq="+most_freq);
 
                 //three state counter if recently detected block for a moment to prevent error
                 if(stroke_state==0)
@@ -643,7 +546,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else stroke_state++;
                 }
-                //cut_frequency(spectrum, 3000, 18000, frequency, fftSize);
+
 
                 //to draw using handler by sending msg
                 Message msg = handlerMeasure.obtainMessage();
@@ -694,20 +597,15 @@ public class MainActivity extends AppCompatActivity {
             t.printStackTrace();
         }
     }
-    private void onclick_audio_start()
+    private void onclick_audio_start()//用來撥放音檔
     {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                long idd=Thread.currentThread().getId();
-                //Log.i(TAG,"run audio start thread id="+idd);
                 StartAudioRecord();
-                //Log.e(TAG,"start");
             }
         });
         thread.start();
-        long iddd=Thread.currentThread().getId();
-        Log.i(TAG,"audio start thread id="+iddd);
         ButtonEnabled(false,true,false);
     }
     private void ButtonEnabled(boolean start, boolean stop, boolean play) {
@@ -715,7 +613,7 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_stop.setEnabled(stop);
         btn_audio_play.setEnabled(play);
     }
-    private void onclick_audio_stop()
+    private void onclick_audio_stop()//停止撥放
     {
         isRecording = false;
         ButtonEnabled(true, false, true);
@@ -729,8 +627,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 //讀取檔案
-        int musicLength = (int) (file.length() / 2);
-        Log.i(TAG,"musiclen="+musicLength);
+        int musicLength = (int) (file.length() / 2);//過長的檔案可能會導致出錯
+        Log.i(TAG,"music len="+musicLength);
         short[] music = new short[musicLength];
         try {
             InputStream is = new FileInputStream(file);
@@ -739,9 +637,7 @@ public class MainActivity extends AppCompatActivity {
             int i = 0;
             while (dis.available() > 0) {
                 music[i] = dis.readShort();
-                if(i%200==0){
-                    //Log.d(TAG,"music["+i+"]="+music[i]);
-                }
+
                 i++;
             }
             dis.close();
@@ -785,22 +681,21 @@ public class MainActivity extends AppCompatActivity {
      * @param windowSize
      * @return the hanning window of a size "windowSize"
      */
-    private double[] hanning(int windowSize) {
+    private double[] hanning(int windowSize) {//會根據從主界面條的window func產生對應的function 只要用這個產生就好 而參數大小應與fftsize相同
         double h_wnd[] = new double[windowSize]; // Hanning window
-        if(dowindow==1)//hanning
+        if(dowindow==1)//hanning window
             for (int i = 0; i < windowSize; i++) { // calculate the hanning window
             h_wnd[i] = 0.5d * (1d - Math.cos(2.0 * Math.PI * i / (windowSize - 1)));
-            //window[i] = 0.54f - 0.46f * cos( (float)i * 2.0f * π / (n-1) );
+
         }
         if(dowindow==2)//hamming
-            for (int i = 0; i < windowSize; i++) { // calculate the hanning window
+            for (int i = 0; i < windowSize; i++) { // calculate the hamming window
             h_wnd[i] = 0.54d - 0.46d*Math.cos(2.0 * Math.PI * i / (windowSize - 1));
-            //window[i] = 0.54f - 0.46f * cos( (float)i * 2.0f * π / (n-1) );
         }
         return h_wnd;
     }
 
-    private void toggle()
+    private void toggle()//切換window func
     {
 
         if(dowindow==2) {dowindow=0;txt_out.setText("window close"); return;}
@@ -819,6 +714,7 @@ public class MainActivity extends AppCompatActivity {
     //given input spectrum set frequcncy between lower upper =0
     //most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
     //affect on only spectrum not fft data itself
+    //目前不使用 因為只對spectrum有用 用to trans版的更完善
     private double[] cut_frequency(double[] spectrum ,int lower_bound,int upper_bound,int frequency,int fftsize)
     {
         int len=spectrum.length;
@@ -834,6 +730,7 @@ public class MainActivity extends AppCompatActivity {
     }
 //use it after fft
 //affect on fft data itself
+//會截斷某lower~upper的頻率範圍
     private double[] to_transform_cut_frequency(double[] toTransform ,int lower_bound,int upper_bound,int frequency,int fftsize) {
         int len = toTransform.length;
 
@@ -851,9 +748,80 @@ public class MainActivity extends AppCompatActivity {
             return toTransform;
     }
 
-
-//end of class
 }
-//bad
+/* 不再使用
+    private void endMediaRecording() {
+        if (!hasmic || !isRecording) return;
+        handlerMeasure.removeCallbacks(taskMeasure);
+        try {
+            recorder.stop();
+            recorder.release();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+        isRecording = false;
+    }
+*/
+/* 不再使用
+    private void startMediaRecording() {
+        if (!hasmic || isRecording) return;
+        txt_out.setText("start");
+        media_strokes=0;
+        cnt=0;
+        recorder = new MediaRecorder();
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
-//test push
+        try {
+            recorder.setOutputFile(tmpfile);
+            recorder.prepare();
+            recorder.start();
+            isRecording = true;
+            handlerMeasure.post(taskMeasure);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+*/
+    /* 不再使用
+    private Runnable taskMeasure = new Runnable() {
+        @Override
+        public void run() {
+            handlerMeasure.sendEmptyMessage(1);
+            //每100毫秒抓取一次檢測結果
+            handlerMeasure.postDelayed(this, 100);
+            //Log.i(TAG, "workRunnable thread id = " +
+
+            //        Thread.currentThread().getId());
+        }
+    };
+
+     */
+/* 不再使用
+    @Override
+    protected void onStop() {
+        super.onStop();
+        endMediaRecording();
+    }
+*/
+    /* 不再使用
+    private void play() {//not using
+        player = new MediaPlayer();
+        try {
+            player.setDataSource(tmpfile);
+            player.prepare();
+            player.start();
+        } catch (IOException e) {
+            Log.e(TAG, "prepare() failed");
+        }
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer MP) {
+                MP.stop();
+                MP.release();
+            }
+        });
+
+    }
+*/
