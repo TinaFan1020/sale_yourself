@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private String tmpfile;
     private final static String TAG = "MyTag";
 
+
     int cnt = 0;
     double[] toTransform;//用來放要拿去fftㄉdata
     double most_freq=0.0;//fft出來最大ㄉ頻率
@@ -113,6 +114,9 @@ public class MainActivity extends AppCompatActivity {
         imageView.invalidate();
         perfectTune.setTuneFreq(15000);
         perfectTune.setTuneAmplitude(50000);
+
+        String testc=testcc('c');
+        Log.i(TAG,testc);
 
     }
 
@@ -800,6 +804,30 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    }
+// C implementation of down converter
+
+    public native String getbaseband(short[] data, double[] outdata, int numdata);
+
+    //C implementation of LEVD
+
+    public native String removedc(double[] data, double[] data_nodc, short[] outdata);
+
+    //C implementation of distance
+
+    public native String getdistance(double[] data, double[] outdata, double [] distance, double [] freqpower);
+
+    // Initialize C down converter
+
+    public native String initdownconvert(int samplerate, int numfreq, double [] wavfreqs);
+
+    public native String getidftdistance(double[] data, double[] outdata);
+
+    public native String calibrate(double[] data);
+
+    public native String testcc(char c);
+    static {
+        System.loadLibrary("mainactivity");
     }
 
 
