@@ -7,7 +7,6 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -16,17 +15,13 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
-import android.util.AttributeSet;
 import android.util.Log;
-import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -41,20 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import android.app.Activity;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.ImageView;
 
 import Catalano.Math.ComplexNumber;
@@ -70,7 +52,7 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
-    Button btn_toggle_draw,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window,btn_play_frequency,btn_stop_frequency;
+    Button btn_toggle_draw,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window,btn_play_frequency,btn_stop_frequency,btn_cal_sd;
     ImageView imageView;//最上面畫畫ㄉ
     TextView txt_out;//中間顯示字ㄉ
     Bitmap bitmap;//最上面畫畫ㄉ
@@ -108,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         btn_play_frequency=findViewById(R.id.btn_play_frequency);
         btn_stop_frequency=findViewById(R.id.btn_stop_frequency);
         btn_toggle_draw=findViewById(R.id.btn_toggle_draw);
+        btn_cal_sd=findViewById(R.id.btn_cal_sd);
         frequency_text=findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
         btn_audio_record.setOnClickListener(v->onclick_audio_start());
@@ -117,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
         btn_toggle_draw.setOnClickListener(v->toggledarw());
         btn_play_frequency.setOnClickListener(v->onlick_frequency_play());
         btn_stop_frequency.setOnClickListener(v->onlick_frequency_stop());
+        btn_cal_sd.setOnClickListener(v->cal_sd());
         //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
         bitmap = Bitmap.createBitmap((int)4096,(int)1000,Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bitmap);
@@ -292,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
         RealDoubleFFT transformer;
 
 
-//16K採集率
+//採集率
         int frequency = 44100;
 //格式
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
@@ -427,6 +411,17 @@ public class MainActivity extends AppCompatActivity {
 
                 //do hilbert transform
                 HilbertTransform.FHT(complexBuffer, FourierTransform.Direction.Forward);
+                int itotal=0;
+                int qtotal=0;
+                for(int i=0;i<complexBuffer.length;i++)
+                {
+                    //Log.i(TAG,"real part["+i+"]= "+complexBuffer[i].real);
+                    //Log.i(TAG,"imag part["+i+"]= "+complexBuffer[i].imaginary);
+                    itotal+=Math.abs(complexBuffer[i].real);
+                    qtotal+=Math.abs(complexBuffer[i].imaginary);
+                }
+                Log.i(TAG,"real part average= "+itotal/complexBuffer.length);
+
                 //after hilbert transform the real part is i signal and imaginary part is q signal
 
                 /*
@@ -518,7 +513,7 @@ public class MainActivity extends AppCompatActivity {
                         peak = Math.abs(spectrum[i]);
                         peak_location = i;
                     }
-                    if(spectrum[i]>=1)Log.i(TAG,"tmp "+i+ " spectrum=="+spectrum[i]);
+                    //if(spectrum[i]>=1)Log.i(TAG,"tmp "+i+ " spectrum=="+spectrum[i]);
 
                 }
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
@@ -747,8 +742,69 @@ public class MainActivity extends AppCompatActivity {
             }
             return toTransform;
     }
+    private void cal_sd()
+    {
+        int collected=0;
+        short[] collected_data=new short[131072];
+        //採集率
+        int frequency = 44100;
+//格式
+        int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
+//16Bit
+        int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
+        int bufferSize=4096;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            checkPermission();
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            checkPermission();
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            checkPermission();
+        }
+
+        AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
+        short[] buffer = new short[bufferSize];//用來儲存原始音訊資料
+        boolean dorecord=true;
+
+        audioRecord.startRecording();
+        Log.i(TAG,"start calculating sd");
+        while(dorecord)
+        {
+            int bufferReadResult = audioRecord.read(buffer, 0, bufferSize);
+            for(int i=0;i<bufferReadResult;i++)
+            {
+                collected_data[collected]=buffer[i];
+                collected++;
+                if(collected==131071) break;
+            }
+            if(collected==131071) {dorecord=false;break;}
+        }
+        audioRecord.stop();
+        Log.i(TAG,"stop calculating sd");
+        double sum = 0.0, standardDeviation = 0.0;
+        int length = 131072;
+
+        for(double num : collected_data) {
+            sum += num;
+        }
+
+        double mean = sum/length;
+
+        for(double num: collected_data) {
+            standardDeviation += Math.pow(num - mean, 2);
+        }
+        Log.i(TAG,"SD="+standardDeviation);
+
+
+
+
+
+    }
+
 
 }
+
 /* 不再使用
     private void endMediaRecording() {
         if (!hasmic || !isRecording) return;
