@@ -43,7 +43,10 @@ import android.widget.ImageView;
 
 import Catalano.Math.ComplexNumber;
 import Catalano.Math.Transforms.FourierTransform;
+import doppler.*;
 import jfftpack.RealDoubleFFT;
+
+
 
 import Catalano.Math.Transforms.HilbertTransform;
 
@@ -62,8 +65,12 @@ public class MainActivity extends AppCompatActivity {
     EditText frequency_text;//命名撞到 我改了變數名
     private String tmpfile;
     private final static String TAG = "MyTag";
+    boolean stroke_detected=false;
+    boolean stroke_flag=false;
 
     //llap zone
+
+
     private int frameSize = 512;
     int recBufSize = 0;
     double temperature = 20;
@@ -115,10 +122,11 @@ public class MainActivity extends AppCompatActivity {
     private double distrend = 0.05;
 
     private double micdis1 = 5;
-    private double micdis2 = 50;
+    private double micdis2 = 135;
     private double dischangehist = 0;
 
-    private double disx, disy;
+    private double disx, disy;//note: x is upper mic y is lower mic on phone
+    private double tmpx=0,tmpy=0,dischangex=0,dischangey=0;
 
     private double displaydis = 0;
     //llap zone
@@ -230,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                 new ThreadInstantRecord().start();
 
             }
+
         });
         //
         btn_llap_stop.setOnClickListener(new View.OnClickListener()
@@ -518,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
                     if(localmax<buffer[i]) localmax=buffer[i];
                     if(localmin>buffer[i]) localmin=buffer[i];
 
-                    //if(i==2000) Log.i(TAG,"buffreadreult="+bufferReadResult+"i= "+i+" buffer[i]="+buffer[i]);
+
                     /*
                     put data into fft array
                      */
@@ -659,16 +668,23 @@ public class MainActivity extends AppCompatActivity {
                     if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0)
                     {
                         stroke_cnt++;
+                        stroke_detected=true;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         stroke_state-=2;
+                    }
+                    else
+                    {
+                        stroke_detected=false;
                     }
                 }
                 else if(stroke_state==-1)
                 {
                     stroke_state=0;
+                    stroke_detected=false;
                 }
                 else if(stroke_state==-2)
                 {
+                    stroke_detected=false;
                     if(pos_avg_local<stroke_power_min)
                     {
                         stroke_state=0;
@@ -941,8 +957,8 @@ private Handler updateviews =new Handler()
         if(msg.what== 0)
         {
             if(isCalibrated) {
-                texDistance_x.setText(String.format("x=%04.2f", disx / 20) + "cm");
-                texDistance_y.setText(String.format("y=%04.2f", disy / 20) + "cm");
+                texDistance_x.setText(String.format("x=%04.2f", dischangex / 20) + "cm");
+                texDistance_y.setText(String.format("y=%04.2f", dischangey / 20) + "cm");
             }
             else
             {texDistance_x.setText("Calibrating...");
@@ -982,6 +998,7 @@ private Handler updateviews =new Handler()
             int curpos = 0;
             long starttime,endtime;
             String c_result;
+
 
 
             while (blnPlayRecord == false) {
@@ -1084,6 +1101,19 @@ private Handler updateviews =new Handler()
                                 disy=(tempsum+micdis1+micdis2)/2;
                             }
                         }
+
+
+                        if((stroke_detected==true)&&(stroke_detected!=stroke_flag))
+                        {
+
+                            dischangex=disx-tmpx;
+                            dischangey=disy-tmpy;
+                            tmpx=disx;
+                            tmpy=disy;
+
+                            stroke_flag=stroke_detected;
+                        }
+                        stroke_flag=stroke_detected;
                         trace_x[tracecount]= (int) Math.round((disy*micdis1*micdis1-disx*micdis2*micdis2+disx*disy*(disy-disx))/2/(disx*micdis2+disy*micdis1));
                         trace_y[tracecount]=(int) Math.round(Math.sqrt(  Math.abs((disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
                         //trace_x[tracecount]= (int) Math.round(disx);
@@ -1126,6 +1156,7 @@ private Handler updateviews =new Handler()
 
         }
     }
+
 // C implementation of down converter
 
     public native String getbaseband(short[] data, double[] outdata, int numdata);
