@@ -44,6 +44,7 @@ import Catalano.Math.Transforms.FourierTransform;
 import jfftpack.RealDoubleFFT;
 
 import  Catalano.Math.Transforms.HilbertTransform;
+import java.nio.file.Files;
 
 
 
@@ -281,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 //採集率
-        int frequency = 44100;
+        int frequency = 48000;
 //格式
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
 //16Bit
@@ -400,6 +401,9 @@ public class MainActivity extends AppCompatActivity {
                 pos_avg_local=pos_total_local/pos_cnt_local;
                 pos_avg_global=pos_total_global/pos_cnt_global;
                 neg_avg_local=neg_total_local/audio_cnt_local;
+
+
+
                 /*
                 apply window func before fft
                 */
@@ -590,12 +594,39 @@ public class MainActivity extends AppCompatActivity {
 
             }
             audioRecord.stop();
+
+            // 複製新的檔案到trainfile
+            boolean train_fft = false;
+            if(train_fft){
+                // copy file
+                try {
+                    File sourceFile = file;
+                    File destinationFile = new File("C:\\Users\\User\\AndroidStudioProjects\\sale_yourself\\app\\src\\main\\java\\com\\example\\soundkeyboard\\trainfile" + sourceFile.getName());
+
+                    FileInputStream fileInputStream = new FileInputStream(sourceFile);
+                    FileOutputStream fileOutputStream = new FileOutputStream(destinationFile);
+
+                    byte[] train_bufffer = new byte[1024];
+                    int train_bufferSize;
+                    while ((train_bufferSize = fileInputStream.read(train_bufffer)) > 0) {
+                        fileOutputStream.write(train_bufffer, 0, train_bufferSize);
+                    }
+                    fileInputStream.close();
+                    fileOutputStream.close();
+                    System.out.println("File is copied successful!");
+                } catch(IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
             dos.close();
         } catch (Throwable t) {
             Log.e(TAG, "錄音失敗"+t);
             t.printStackTrace();
         }
     }
+
     private void onclick_audio_start()//用來撥放音檔
     {
         Thread thread = new Thread(new Runnable() {
@@ -641,7 +672,7 @@ public class MainActivity extends AppCompatActivity {
             }
             dis.close();
             AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                    44100, AudioFormat.CHANNEL_OUT_MONO,
+                    48000, AudioFormat.CHANNEL_OUT_MONO,
                     AudioFormat.ENCODING_PCM_16BIT,
                     musicLength * 2,
                     AudioTrack.MODE_STREAM);
@@ -751,7 +782,7 @@ public class MainActivity extends AppCompatActivity {
         int collected=0;
         short[] collected_data=new short[131072];
         //採集率
-        int frequency = 44100;
+        int frequency = 48000;
 //格式
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
 //16Bit
