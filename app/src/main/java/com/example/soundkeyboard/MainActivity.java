@@ -2,6 +2,7 @@ package com.example.soundkeyboard;
 
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -44,7 +45,8 @@ import Catalano.Math.Transforms.FourierTransform;
 import jfftpack.RealDoubleFFT;
 
 import  Catalano.Math.Transforms.HilbertTransform;
-
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 import com.karlotoy.perfectune.instance.PerfectTune;
@@ -263,6 +265,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void StartAudioRecord() {//錄音的函式 還有處理資料也在這裡
         Log.i(TAG, "開始錄音");
         ////////////////////////////
@@ -281,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 //採集率
-        int frequency = 48000;
+        int frequency = 44100;
 //格式
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
 //16Bit
@@ -590,15 +593,44 @@ public class MainActivity extends AppCompatActivity {
 
             }
             audioRecord.stop();
+
+            boolean train_fft = true;
+            if(train_fft){
+                File des = new File(getExternalCacheDir()+file.getName());
+                copyFileUsingStream(file,des);
+            }
+
             dos.close();
         } catch (Throwable t) {
             Log.e(TAG, "錄音失敗"+t);
             t.printStackTrace();
         }
     }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private static void copyFileUsingStream(File source, File dest) throws IOException {
+        InputStream is = null;
+        OutputStream os = null;
+        try {
+            is = new FileInputStream(source);
+            String currentTime = LocalDateTime.now().toString();
+            os = new FileOutputStream(dest + currentTime);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) > 0) {
+                os.write(buffer, 0, length);
+            }
+        } finally {
+            is.close();
+            os.close();
+        }
+    }
+
     private void onclick_audio_start()//用來撥放音檔
     {
         Thread thread = new Thread(new Runnable() {
+            @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void run() {
                 StartAudioRecord();
@@ -654,7 +686,6 @@ public class MainActivity extends AppCompatActivity {
             t.printStackTrace();
         }
     }
-
 
     /**
      * apply desired window function to the signal for fft
