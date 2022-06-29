@@ -19,6 +19,7 @@ import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
@@ -61,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     Canvas canvas;//最上面畫畫ㄉ
     Paint paint;//最上面畫畫ㄉ
     EditText frequency_text;//命名撞到 我改了變數名
-    private String tmpfile;
+
     private final static String TAG = "MyTag";
 
 
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
     int stroke_power_min=150;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
-    File file;
+    File file,file_org;
     int dowindow=1;//用來開關window func 1是開 0是關
     int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
     PerfectTune perfectTune = new PerfectTune();
@@ -111,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
         paint.setColor(Color.GREEN);
         imageView = (ImageView) this.findViewById(R.id.ImageView01);
         imageView.setImageBitmap(bitmap);
-        tmpfile = getExternalCacheDir().getAbsolutePath();
         Log.i(TAG,"pid of main thread= "+Thread.currentThread().getId());
         imageView.invalidate();
         perfectTune.setTuneFreq(15000);
@@ -284,13 +284,15 @@ public class MainActivity extends AppCompatActivity {
 
 
 //採集率
-        int frequency = 44100;
+        int frequency = 48000;
 //格式
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
 //16Bit
         int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
 //生成PCM檔案
-        file = new File(getExternalCacheDir().getAbsolutePath()+"/reverseme.pcm");
+        file = new File( Environment.getExternalStorageDirectory().getAbsolutePath()+"/audio_fft.pcm");
+        file_org = new File( Environment.getExternalStorageDirectory().getAbsolutePath()+"/audio_org.pcm");
+
         Log.i(TAG, "生成檔案"+file.getAbsolutePath());
 //如果存在，就先刪除再建立
         if(!file.exists()){
@@ -309,10 +311,29 @@ public class MainActivity extends AppCompatActivity {
                 //throw new IllegalStateException("未能建立"+file.toString());
             }
         }
+        if(!file_org.exists()){
+            Log.i(TAG,"檔案不存在");
+        }
+        if (file_org.exists()) {
+            file_org.delete();
+            Log.i(TAG, "刪除檔案");
+
+            try {
+                file_org.createNewFile();
+                Log.i(TAG, "建立檔案");
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.i(TAG, "未能建立");
+                //throw new IllegalStateException("未能建立"+file.toString());
+            }
+        }
         try {//輸出流
             OutputStream os = new FileOutputStream(file);
             BufferedOutputStream bos = new BufferedOutputStream(os);
             DataOutputStream dos = new DataOutputStream(bos);
+            OutputStream os_org = new FileOutputStream(file_org);
+            BufferedOutputStream bos_org = new BufferedOutputStream(os_org);
+            DataOutputStream dos_org = new DataOutputStream(bos_org);
             //int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);//這會得到最小所需buffersize 但要用2的次方大小
             int bufferSize=4096;// set as power of 2 for fft 這是每個迴圈取的資料點 每個迴圈約等於0.09秒
             int fftSize=bufferSize*2;//丟進去做fft的大小 是buffer的兩倍 為了讓fft中的運作與buffer對齊
@@ -399,6 +420,12 @@ public class MainActivity extends AppCompatActivity {
                     //put data into complex array
                     complexBuffer[i].real=buffer[i];
                     complexBuffer[i].imaginary=0;
+
+
+
+                    //write original data into pcm2
+                    dos_org.writeShort(buffer[i]);
+
                 };
                 pos_avg_local=pos_total_local/pos_cnt_local;
                 pos_avg_global=pos_total_global/pos_cnt_global;
@@ -599,8 +626,14 @@ public class MainActivity extends AppCompatActivity {
                 File des = new File(getExternalCacheDir()+file.getName());
                 copyFileUsingStream(file,des);
             }
+            boolean train_unfft = true;
+            if(train_unfft){
+                File des = new File(getExternalCacheDir()+file_org.getName());
+                copyFileUsingStream(file_org,des);
+            }
 
             dos.close();
+            dos_org.close();
         } catch (Throwable t) {
             Log.e(TAG, "錄音失敗"+t);
             t.printStackTrace();
@@ -658,11 +691,11 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 //讀取檔案
-        int musicLength = (int) (file.length() / 2);//過長的檔案可能會導致出錯
+        int musicLength = (int) (file_org.length() / 2);//過長的檔案可能會導致出錯
         Log.i(TAG,"music len="+musicLength);
         short[] music = new short[musicLength];
         try {
-            InputStream is = new FileInputStream(file);
+            InputStream is = new FileInputStream(file_org);
             BufferedInputStream bis = new BufferedInputStream(is);
             DataInputStream dis = new DataInputStream(bis);
             int i = 0;
@@ -673,7 +706,7 @@ public class MainActivity extends AppCompatActivity {
             }
             dis.close();
             AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-                    44100, AudioFormat.CHANNEL_OUT_MONO,
+                    48000, AudioFormat.CHANNEL_OUT_MONO,
                     AudioFormat.ENCODING_PCM_16BIT,
                     musicLength * 2,
                     AudioTrack.MODE_STREAM);
@@ -782,7 +815,7 @@ public class MainActivity extends AppCompatActivity {
         int collected=0;
         short[] collected_data=new short[131072];
         //採集率
-        int frequency = 44100;
+        int frequency = 48000;
 //格式
         int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
 //16Bit
