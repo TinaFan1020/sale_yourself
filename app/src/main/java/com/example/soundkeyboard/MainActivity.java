@@ -290,8 +290,8 @@ public class MainActivity extends AppCompatActivity {
 //16Bit
         int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
 //生成PCM檔案
-        file = new File( Environment.getExternalStorageDirectory().getAbsolutePath()+"/audio_fft.pcm");
-        file_org = new File( Environment.getExternalStorageDirectory().getAbsolutePath()+"/audio_org.pcm");
+        file = new File( getExternalCacheDir().getAbsolutePath()+"/audio_fft.pcm");
+        file_org = new File( getExternalCacheDir().getAbsolutePath()+"/audio_org.pcm");
 
         Log.i(TAG, "生成檔案"+file.getAbsolutePath());
 //如果存在，就先刪除再建立
