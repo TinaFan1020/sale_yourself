@@ -24,9 +24,11 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -43,6 +45,7 @@ import android.widget.ImageView;
 
 import Catalano.Math.ComplexNumber;
 import Catalano.Math.Transforms.FourierTransform;
+import doppler.*;
 import jfftpack.RealDoubleFFT;
 
 import  Catalano.Math.Transforms.HilbertTransform;
@@ -55,24 +58,88 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
-    Button btn_toggle_draw,btn_audio_record,btn_audio_stop,btn_audio_play,btn_toggle_window,btn_play_frequency,btn_stop_frequency,btn_cal_sd;
+    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop;
     ImageView imageView;//最上面畫畫ㄉ
-    TextView txt_out;//中間顯示字ㄉ
+    TextView txt_out,texDistance_x,texDistance_y;//中間顯示字ㄉ
     Bitmap bitmap;//最上面畫畫ㄉ
     Canvas canvas;//最上面畫畫ㄉ
     Paint paint;//最上面畫畫ㄉ
     EditText frequency_text;//命名撞到 我改了變數名
-
+    private String tmpfile;
     private final static String TAG = "MyTag";
+    boolean stroke_detected=false;
+    boolean stroke_flag=false;
 
+    //llap zone
+
+
+    private int frameSize = 512;
+    int recBufSize = 0;
+    double temperature = 20;
+    int numfreq = 16;
+
+    private AudioRecord llap_audioRecord;
+    private double freqinter = 350;
+
+    private double[] wavefreqs = new double[numfreq];
+
+    private double[] wavelength = new double[numfreq];
+
+    private double[] phasechange = new double[numfreq * 2];
+
+    private double[] freqpower = new double[numfreq * 2];
+
+    private double[] dischange = new double[2];
+
+    private double[] idftdis = new double[2];
+
+    private double startfreq = 15050;//17150
+
+    private double soundspeed = 0;
+    private boolean blnPlayRecord = false;
+    int coscycle = 1920;
+
+    private int sampleRateInHz = 48000;
+
+    int cicdec = 16;
+    int cicsec = 3;
+    int cicdelay = cicdec * 17;
+
+    private double[] baseband = new double[2 * numfreq * 2 * frameSize / cicdec];
+
+    private double[] baseband_nodc = new double[2 * numfreq * 2 * frameSize / cicdec];
+
+    private short[] dcvalue = new short[4 * numfreq];
+
+
+    private int[] trace_x = new int[1000];
+    private int[] trace_y = new int[1000];
+    private int tracecount = 0;
+
+    private int playBufSize = 0;
+    private boolean isCalibrated = false;
+    private int now;
+    private int lastcalibration;
+
+    private double distrend = 0.05;
+
+    private double micdis1 = 5;
+    private double micdis2 = 135;
+    private double dischangehist = 0;
+
+    private double disx, disy;//note: x is upper mic y is lower mic on phone
+    private double tmpx=0,tmpy=0,dischangex=0,dischangey=0;
+
+    private double displaydis = 0;
+    //llap zone
 
     int cnt = 0;
     double[] toTransform;//用來放要拿去fftㄉdata
-    double most_freq=0.0;//fft出來最大ㄉ頻率
+    double most_freq = 0.0;//fft出來最大ㄉ頻率
     //////
-    int quite_avg=90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
-    int stroke_power_max=500;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
-    int stroke_power_min=150;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
+    int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
+    int stroke_power_max = 500;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
+    int stroke_power_min = 150;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
     File file,file_org;
@@ -87,38 +154,110 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         checkPermission();
         //按鈕的宣告
-        btn_audio_record=findViewById(R.id.btn_audio_record);
-        btn_audio_stop=findViewById(R.id.btn_audio_end);
-        btn_audio_play=findViewById(R.id.btn_audio_play);
-        btn_toggle_window=findViewById(R.id.btn_toggle_window);
-        btn_play_frequency=findViewById(R.id.btn_play_frequency);
-        btn_stop_frequency=findViewById(R.id.btn_stop_frequency);
-        btn_toggle_draw=findViewById(R.id.btn_toggle_draw);
-        btn_cal_sd=findViewById(R.id.btn_cal_sd);
-        frequency_text=findViewById(R.id.frequency_num);
+        btn_audio_record = findViewById(R.id.btn_audio_record);
+        btn_audio_stop = findViewById(R.id.btn_audio_end);
+        btn_audio_play = findViewById(R.id.btn_audio_play);
+        btn_toggle_window = findViewById(R.id.btn_toggle_window);
+        btn_play_frequency = findViewById(R.id.btn_play_frequency);
+        btn_stop_frequency = findViewById(R.id.btn_stop_frequency);
+        btn_toggle_draw = findViewById(R.id.btn_toggle_draw);
+        btn_cal_sd = findViewById(R.id.btn_cal_sd);
+        btn_llap_start = findViewById(R.id.btn_llap_start);
+        btn_llap_stop = findViewById(R.id.btn_llap_stop);
+        frequency_text = findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
-        btn_audio_record.setOnClickListener(v->onclick_audio_start());
-        btn_audio_stop.setOnClickListener(v->onclick_audio_stop());
-        btn_audio_play.setOnClickListener(v->onclick_audio_play());
-        btn_toggle_window.setOnClickListener(v->toggle());
-        btn_toggle_draw.setOnClickListener(v->toggledarw());
-        btn_play_frequency.setOnClickListener(v->onlick_frequency_play());
-        btn_stop_frequency.setOnClickListener(v->onlick_frequency_stop());
-        btn_cal_sd.setOnClickListener(v->cal_sd());
+        texDistance_x=findViewById(R.id.text_disatnce_x);
+        texDistance_y=findViewById(R.id.text_distance_y);
+        btn_audio_record.setOnClickListener(v -> onclick_audio_start());
+        btn_audio_stop.setOnClickListener(v -> onclick_audio_stop());
+        btn_audio_play.setOnClickListener(v -> onclick_audio_play());
+        btn_toggle_window.setOnClickListener(v -> toggle());
+        btn_toggle_draw.setOnClickListener(v -> toggledarw());
+        btn_play_frequency.setOnClickListener(v -> onlick_frequency_play());
+        btn_stop_frequency.setOnClickListener(v -> onlick_frequency_stop());
+        btn_cal_sd.setOnClickListener(v -> cal_sd());
         //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
-        bitmap = Bitmap.createBitmap((int)4096,(int)1000,Bitmap.Config.ARGB_8888);
+        bitmap = Bitmap.createBitmap((int) 4096, (int) 1000, Bitmap.Config.ARGB_8888);
         canvas = new Canvas(bitmap);
-        paint= new Paint();
+        paint = new Paint();
         paint.setColor(Color.GREEN);
         imageView = (ImageView) this.findViewById(R.id.ImageView01);
         imageView.setImageBitmap(bitmap);
-        Log.i(TAG,"pid of main thread= "+Thread.currentThread().getId());
+        tmpfile = getExternalCacheDir().getAbsolutePath();
+        Log.i(TAG, "pid of main thread= " + Thread.currentThread().getId());
         imageView.invalidate();
         perfectTune.setTuneFreq(15000);
         perfectTune.setTuneAmplitude(50000);
 
-        String testc=testcc('c');
-        Log.i(TAG,testc);
+        //String testc=testcc('c');
+        //Log.i(TAG,testc);
+        //llap zone
+        soundspeed = 331.3 + 0.606 * temperature;
+
+
+        for (int i = 0; i < numfreq; i++) {
+            wavefreqs[i] = startfreq + i * freqinter;
+            wavelength[i] = soundspeed / wavefreqs[i] * 1000;
+        }
+
+
+        disx = 0;
+        disy = 250;
+        now = 0;
+        lastcalibration = 0;
+
+        tracecount = 0;
+
+        Log.i(TAG, "initialization start at time: " + System.currentTimeMillis());
+        Log.i(TAG, initdownconvert(sampleRateInHz, numfreq, wavefreqs));
+        Log.i(TAG, "" + wavefreqs[0]);
+        Log.i(TAG, "initialization finished at time: " + System.currentTimeMillis());
+
+        btn_llap_start.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                btn_llap_start.setEnabled(false);
+                btn_llap_stop.setEnabled(true);
+
+                recBufSize = AudioRecord.getMinBufferSize(sampleRateInHz,
+                        AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+
+                Log.i(TAG, "recbuffersize:" + recBufSize);
+
+                playBufSize = AudioTrack.getMinBufferSize(sampleRateInHz,
+                        AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+
+                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    checkPermission();
+                }
+                llap_audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                        sampleRateInHz, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, recBufSize);
+
+
+                Log.i(TAG,"channels:" + llap_audioRecord.getChannelConfiguration());
+
+                new ThreadInstantPlay().start();
+                new ThreadInstantRecord().start();
+
+            }
+
+        });
+        //
+        btn_llap_stop.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                btn_llap_start.setEnabled(true);
+                btn_llap_stop.setEnabled(false);
+                blnPlayRecord=false;
+                isCalibrated=false;
+
+            }
+        });
+
+
+        //llap zone
 
     }
 
@@ -412,7 +551,7 @@ public class MainActivity extends AppCompatActivity {
                     if(localmax<buffer[i]) localmax=buffer[i];
                     if(localmin>buffer[i]) localmin=buffer[i];
 
-                    //if(i==2000) Log.i(TAG,"buffreadreult="+bufferReadResult+"i= "+i+" buffer[i]="+buffer[i]);
+
                     /*
                     put data into fft array
                      */
@@ -454,7 +593,7 @@ public class MainActivity extends AppCompatActivity {
                     itotal+=Math.abs(complexBuffer[i].real);
                     qtotal+=Math.abs(complexBuffer[i].imaginary);
                 }
-                Log.i(TAG,"real part average= "+itotal/complexBuffer.length);
+                //Log.i(TAG,"real part average= "+itotal/complexBuffer.length);
 
                 //after hilbert transform the real part is i signal and imaginary part is q signal
 
@@ -462,9 +601,9 @@ public class MainActivity extends AppCompatActivity {
                 do cut off frequency cut off frequency lower than lower and bigger than upper
                  */
                 //todo:這邊要做調整截斷頻率的東西
-                //int lower=3000;
-                //int upper=19000;
-               // toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
+                int lower=6000;
+                int upper=22000;
+                toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
 
                 /*
 
@@ -520,13 +659,7 @@ public class MainActivity extends AppCompatActivity {
                 transformer.bt(toTransform);
 
                 int tmp_stat=0;
-                /* debug
-                for(int i=0;i<toTransform.length;i++)
-                {
-                    if(i==2000)Log.i(TAG,"coeff "+i+ " after inv fft="+toTransform[i]);
-                    //if(i>4096&&toTransform[i]>0.5)Log.i(TAG,"coeff "+i+ " !!!this should not >1"+toTransform[i]);
-                }
-                */
+
 
                 /*
                 trying to write transformed data into pcm file 音訊檔的內容是經過fft和反fft轉換的 會損壞音質
@@ -559,8 +692,13 @@ public class MainActivity extends AppCompatActivity {
                     if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0)
                     {
                         stroke_cnt++;
+                        stroke_detected=true;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         stroke_state-=2;
+                    }
+                    else
+                    {
+                        stroke_detected=false;
                     }
                 }
                 else if(stroke_state==-1)
@@ -569,6 +707,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else if(stroke_state==-2)
                 {
+                    stroke_detected=false;
                     if(pos_avg_local<stroke_power_min)
                     {
                         stroke_state=0;
@@ -864,11 +1003,217 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.i(TAG,"SD="+standardDeviation);
 
-
-
-
-
     }
+
+//llap zone
+private Handler updateviews =new Handler()
+{
+    @Override
+    public void handleMessage(Message msg)
+    {
+        if(msg.what== 0)
+        {
+            if(isCalibrated) {
+                texDistance_x.setText(String.format("x=%04.2f", disx / 20) + "cm");
+                texDistance_y.setText(String.format("y=%04.2f", disy / 20) + "cm");
+            }
+            else
+            {texDistance_x.setText("Calibrating...");
+                texDistance_y.setText("");
+
+            }
+            Log.i(TAG,"count" + tracecount);
+            tracecount=0;
+        }
+    }
+
+
+};
+    class ThreadInstantPlay extends Thread
+    {
+        @Override
+        public void run()
+        {
+            SoundPlayer Player= new SoundPlayer(sampleRateInHz,numfreq,wavefreqs);
+            blnPlayRecord=true;
+            Player.play();
+            while (blnPlayRecord==true){}
+            Player.stop();
+        }
+    }
+
+    class ThreadInstantRecord extends Thread {
+
+        //private short [] bsRecord = new short[recBufSize];
+        //
+
+        @Override
+        public void run() {
+            short[] bsRecord = new short[recBufSize * 2];
+            byte[] networkbuf = new byte[recBufSize * 4];
+            int datacount = 0;
+            int curpos = 0;
+            long starttime,endtime;
+            String c_result;
+
+
+
+            while (blnPlayRecord == false) {
+            }
+            llap_audioRecord.startRecording();
+            /*
+             *
+             */
+            while (blnPlayRecord) {
+                /*
+                 *
+                 */
+                int line = llap_audioRecord.read(bsRecord, 0, frameSize * 2);
+                datacount = datacount + line / 2;
+                now=now+1;
+
+                //Log.i(TAG,"recevied data:" + line + " at time" + System.currentTimeMillis());
+                if (line >= frameSize) {
+
+                    //get baseband
+
+
+                    starttime=System.currentTimeMillis();
+                    Log.i(TAG, getbaseband(bsRecord, baseband, line / 2));//do cic
+                    endtime=System.currentTimeMillis();
+
+                   // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
+
+                    starttime=System.currentTimeMillis();
+                    Log.i(TAG, removedc(baseband, baseband_nodc, dcvalue));
+                    endtime=System.currentTimeMillis();
+
+                   // Log.i(TAG,"time used LEVD:"+(endtime-starttime));
+
+                    starttime=System.currentTimeMillis();
+                    Log.i(TAG, getdistance(baseband_nodc, phasechange, dischange, freqpower));
+                    endtime=System.currentTimeMillis();
+
+                    //Log.i(TAG,"time used distance:"+(endtime-starttime));
+
+
+                    if(!isCalibrated&&Math.abs(dischange[0])<0.05&&now-lastcalibration>10) {
+
+
+                        c_result=calibrate(baseband);
+                        Log.i(TAG,c_result) ;
+                        lastcalibration=now;
+                        if(c_result.equals("calibrate OK")){
+                            isCalibrated=true;
+                        }
+
+                    }
+                    if(isCalibrated) {
+                        starttime = System.currentTimeMillis();
+                        Log.i(TAG,getidftdistance(baseband_nodc, idftdis));
+                        endtime = System.currentTimeMillis();
+
+                      //  Log.i(TAG,"time used idftdistance:" + (endtime - starttime));
+
+                        //keep difference stable;
+
+                        double disdiff,dissum;
+                        disdiff=dischange[0]-dischange[1];
+                        dissum=dischange[0]+dischange[1];
+                        dischangehist=dischangehist*0.5+disdiff*0.5;
+                        dischange[0]=(dissum+dischangehist)/2;
+                        dischange[1]=(dissum-dischangehist)/2;
+
+                        disx=disx+dischange[0];
+                        if(disx>1000)
+                            disx=1000;
+                        if(disx<0)
+                            disx=0;
+                        disy=disy+dischange[1];
+                        if(disy>1000)
+                            disy=1000;
+                        if(disy<0)
+                            disy=0;
+                        if(Math.abs(dischange[0])<0.05&&Math.abs(dischange[1])<0.05&&Math.abs(idftdis[0])>0.1&&Math.abs(idftdis[1])>0.1)
+                        {
+                            disx=disx*(1-distrend)+idftdis[0]*distrend;
+                            disy=disy*(1-distrend)+idftdis[1]*distrend;
+                        }
+                        if(disx<micdis1)
+                            disx=micdis1;
+                        if(disy<micdis2)
+                            disy=micdis2;
+                        if(Math.abs(disx-disy)>(micdis1+micdis2))
+                        {
+                            double tempsum=disx+disy;
+                            if(disx>disy)
+                            {
+                                disx=(tempsum+micdis1+micdis2)/2;
+                                disy=(tempsum-micdis1-micdis2)/2;
+
+                            }
+                            else
+                            {
+                                disx=(tempsum-micdis1-micdis2)/2;
+                                disy=(tempsum+micdis1+micdis2)/2;
+                            }
+                        }
+
+
+                        if((stroke_detected==true)&&(stroke_detected!=stroke_flag))
+                        {
+
+                            dischangex=disx-tmpx;
+                            dischangey=disy-tmpy;
+                            tmpx=disx;
+                            tmpy=disy;
+
+                            stroke_flag=stroke_detected;
+                        }
+                        stroke_flag=stroke_detected;
+                        trace_x[tracecount]= (int) Math.round((disy*micdis1*micdis1-disx*micdis2*micdis2+disx*disy*(disy-disx))/2/(disx*micdis2+disy*micdis1));
+                        trace_y[tracecount]=(int) Math.round(Math.sqrt(  Math.abs((disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
+                        //trace_x[tracecount]= (int) Math.round(disx);
+                        //trace_y[tracecount]=(int) Math.round(disy);
+                        Log.i(TAG,"x="+trace_x[tracecount]+"y="+trace_y[tracecount]);
+                        tracecount++;
+
+                    }
+
+
+
+
+                    if(Math.abs(displaydis-disx)>2||(tracecount>10)) {
+                        Message msg = new Message();
+                        msg.what = 0;
+                        displaydis=disx;
+                        updateviews.sendMessage(msg);
+                    }
+                    if(!isCalibrated)
+                    {
+                        Message msg = new Message();
+                        msg.what = 0;
+                        updateviews.sendMessage(msg);
+                    }
+
+
+
+
+                    curpos = curpos + line / 2;
+                    if (curpos > coscycle)
+                        curpos = curpos - coscycle;
+
+
+
+                }
+                //Log.i(TAG,"endtime" + System.currentTimeMillis());
+
+            }
+            llap_audioRecord.stop();
+
+        }
+    }
+
 // C implementation of down converter
 
     public native String getbaseband(short[] data, double[] outdata, int numdata);
