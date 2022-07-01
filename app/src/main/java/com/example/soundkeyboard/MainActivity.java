@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
     //////
     int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
     int stroke_power_max = 500;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
-    int stroke_power_min = 150;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
+    int stroke_power_min = 50;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
     File file,file_org;
@@ -534,8 +534,8 @@ public class MainActivity extends AppCompatActivity {
                 //read data from mic and predict strokes
                 for (int i = 0; i < bufferReadResult; i++  ) {
                     //double db = 20 * (Math.log10(Math.abs(buffer[i])));
+                    /* //this original stroke detect
                     lastpos=ispos;
-
                     if(buffer[i]>0) {ispos=1;pos_total_local+=buffer[i];pos_cnt_local++;pos_cnt_global++;pos_total_global+=buffer[i];}
                     if(buffer[i]==0) ispos=ispos;
                     if(buffer[i]<0) {ispos=-1;neg_total_local+=buffer[i];}
@@ -550,7 +550,7 @@ public class MainActivity extends AppCompatActivity {
                     if(buffer[i]==0) localzeros++;
                     if(localmax<buffer[i]) localmax=buffer[i];
                     if(localmin>buffer[i]) localmin=buffer[i];
-
+*/
 
                     /*
                     put data into fft array
@@ -566,9 +566,12 @@ public class MainActivity extends AppCompatActivity {
                     dos_org.writeShort(buffer[i]);
 
                 };
-                pos_avg_local=pos_total_local/pos_cnt_local;
-                pos_avg_global=pos_total_global/pos_cnt_global;
-                neg_avg_local=neg_total_local/audio_cnt_local;
+                /*
+                pos_avg_local=(double)pos_total_local/(double)pos_cnt_local;
+                pos_avg_global=(double)pos_total_global/(double)pos_cnt_global;
+                neg_avg_local=(double)neg_total_local/(double)audio_cnt_local;
+                */
+
                 /*
                 apply window func before fft
                 */
@@ -588,12 +591,11 @@ public class MainActivity extends AppCompatActivity {
                 int qtotal=0;
                 for(int i=0;i<complexBuffer.length;i++)
                 {
-                    //Log.i(TAG,"real part["+i+"]= "+complexBuffer[i].real);
-                    //Log.i(TAG,"imag part["+i+"]= "+complexBuffer[i].imaginary);
+
                     itotal+=Math.abs(complexBuffer[i].real);
                     qtotal+=Math.abs(complexBuffer[i].imaginary);
                 }
-                //Log.i(TAG,"real part average= "+itotal/complexBuffer.length);
+
 
                 //after hilbert transform the real part is i signal and imaginary part is q signal
 
@@ -669,6 +671,29 @@ public class MainActivity extends AppCompatActivity {
                     short tmp=(short)Math.round(toTransform[i]);
                     dos.writeShort(tmp);
                 }
+                // detect stroke from inverse fft data
+                for(int i=0;i<bufferSize;i++)
+                {
+                    lastpos=ispos;
+                    if(toTransform[i]>0) {ispos=1;pos_total_local+=toTransform[i];pos_cnt_local++;pos_cnt_global++;pos_total_global+=toTransform[i];}
+                    if(toTransform[i]==0) ispos=ispos;
+                    if(toTransform[i]<0) {ispos=-1;neg_total_local+=toTransform[i];}
+
+                    if(lastpos!=ispos) zerocross++;
+
+                    audio_cnt_global++;
+                    audio_cnt_local++;
+                    audio_avg_global+=(toTransform[i]-audio_avg_global)/audio_cnt_global;
+                    audio_avg_local+=(toTransform[i]-audio_avg_local)/audio_cnt_local;
+                    audio_total+=toTransform[i];
+                    if(toTransform[i]==0) localzeros++;
+                    if(localmax<toTransform[i]) localmax=(int)toTransform[i];
+                    if(localmin>toTransform[i]) localmin=(int)toTransform[i];
+
+                }
+                pos_avg_local=(double)pos_total_local/(double)pos_cnt_local;
+                pos_avg_global=(double)pos_total_global/(double)pos_cnt_global;
+                neg_avg_local=(double)neg_total_local/(double)audio_cnt_local;
 
                 //end of do inverse fft
                 double peak = -1.0;
@@ -680,7 +705,7 @@ public class MainActivity extends AppCompatActivity {
                         peak = Math.abs(spectrum[i]);
                         peak_location = i;
                     }
-                    //if(spectrum[i]>=1)Log.i(TAG,"tmp "+i+ " spectrum=="+spectrum[i]);
+
 
                 }
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
@@ -830,11 +855,11 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 //讀取檔案
-        int musicLength = (int) (file_org.length() / 2);//過長的檔案可能會導致出錯
+        int musicLength = (int) (file.length() / 2);//過長的檔案可能會導致出錯
         Log.i(TAG,"music len="+musicLength);
         short[] music = new short[musicLength];
         try {
-            InputStream is = new FileInputStream(file_org);
+            InputStream is = new FileInputStream(file);
             BufferedInputStream bis = new BufferedInputStream(is);
             DataInputStream dis = new DataInputStream(bis);
             int i = 0;
@@ -1014,8 +1039,16 @@ private Handler updateviews =new Handler()
         if(msg.what== 0)
         {
             if(isCalibrated) {
-                texDistance_x.setText(String.format("x=%04.2f", disx / 20) + "cm");
-                texDistance_y.setText(String.format("y=%04.2f", disy / 20) + "cm");
+                texDistance_x.setText(String.format("x=%04.2f", dischangex / 20) + "cm");
+                texDistance_y.setText(String.format("y=%04.2f", dischangey / 20) + "cm");
+                if(stroke_detected)
+                {
+                    txt_out.setText("stroke detected now!");
+                }
+                else
+                {
+                    txt_out.setText("no stroke!");
+                }
             }
             else
             {texDistance_x.setText("Calibrating...");
@@ -1167,7 +1200,6 @@ private Handler updateviews =new Handler()
                             dischangey=disy-tmpy;
                             tmpx=disx;
                             tmpy=disy;
-
                             stroke_flag=stroke_detected;
                         }
                         stroke_flag=stroke_detected;
