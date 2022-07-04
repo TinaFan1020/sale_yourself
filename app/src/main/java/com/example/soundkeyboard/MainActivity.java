@@ -9,6 +9,7 @@ import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -27,7 +28,15 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+
+import com.karlotoy.perfectune.instance.PerfectTune;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -39,13 +48,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import android.graphics.Bitmap;
-import android.widget.ImageView;
+import java.time.LocalDateTime;
 
 import Catalano.Math.ComplexNumber;
 import Catalano.Math.Transforms.FourierTransform;
-import doppler.*;
 import jfftpack.RealDoubleFFT;
 
 import  Catalano.Math.Transforms.HilbertTransform;
@@ -60,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
     Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop;
     ImageView imageView;//最上面畫畫ㄉ
-    TextView txt_out,texDistance_x,texDistance_y;//中間顯示字ㄉ
+    TextView txt_out,texDistance_x,texDistance_y,absolute_disx,absolute_disy;//中間顯示字ㄉ
     Bitmap bitmap;//最上面畫畫ㄉ
     Canvas canvas;//最上面畫畫ㄉ
     Paint paint;//最上面畫畫ㄉ
@@ -168,6 +174,8 @@ public class MainActivity extends AppCompatActivity {
         txt_out = findViewById(R.id.txt_out);
         texDistance_x=findViewById(R.id.text_disatnce_x);
         texDistance_y=findViewById(R.id.text_distance_y);
+        absolute_disx=findViewById(R.id.text_absolute_disx);
+        absolute_disy=findViewById(R.id.text_absolute_disy);
         btn_audio_record.setOnClickListener(v -> onclick_audio_start());
         btn_audio_stop.setOnClickListener(v -> onclick_audio_stop());
         btn_audio_play.setOnClickListener(v -> onclick_audio_play());
@@ -1041,6 +1049,8 @@ private Handler updateviews =new Handler()
             if(isCalibrated) {
                 texDistance_x.setText(String.format("x=%04.2f", dischangex / 20) + "cm");
                 texDistance_y.setText(String.format("y=%04.2f", dischangey / 20) + "cm");
+                absolute_disx.setText(String.format("absolute x=%04.2f", disx/20) + "cm");
+                absolute_disy.setText(String.format("absolute y=%04.2f", disy/20) + "cm");
                 if(stroke_detected)
                 {
                     txt_out.setText("stroke detected now!");

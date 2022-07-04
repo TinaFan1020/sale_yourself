@@ -189,4 +189,28 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.296" />
 
+    <TextView
+        android:id="@+id/text_absolute_disx"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="absolute_distance_x"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.121"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.255" />
+
+    <TextView
+        android:id="@+id/text_absolute_disy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="absolute_distance_y"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.838"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.255" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
