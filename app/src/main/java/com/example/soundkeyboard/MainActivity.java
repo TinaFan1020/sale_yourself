@@ -36,6 +36,15 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import android.content.pm.ActivityInfo;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.content.Context;
+import android.widget.TextView;
+
 import com.karlotoy.perfectune.instance.PerfectTune;
 
 import java.io.BufferedInputStream;
@@ -75,6 +84,9 @@ public class MainActivity extends AppCompatActivity {
     private final static String TAG = "MyTag";
     boolean stroke_detected=false;
     boolean stroke_flag=false;
+
+    SensorManager sensorManager;
+    Sensor sensor;
 
     //llap zone
 
@@ -196,6 +208,10 @@ public class MainActivity extends AppCompatActivity {
         imageView.invalidate();
         perfectTune.setTuneFreq(15000);
         perfectTune.setTuneAmplitude(50000);
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         //String testc=testcc('c');
         //Log.i(TAG,testc);
@@ -1083,6 +1099,31 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG,"SD="+standardDeviation);
 
     }
+    public void onResume() {
+        super.onResume();
+        sensorManager.registerListener(gyroListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    public void onStop() {
+        super.onStop();
+        sensorManager.unregisterListener(gyroListener);
+    }
+
+    public SensorEventListener gyroListener = new SensorEventListener() {
+        public void onAccuracyChanged(Sensor sensor, int acc) {
+        }
+
+        public void onSensorChanged(SensorEvent event) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+            float movement=x+y+z;
+
+            if(x>0.001) Log.i(TAG,"x>0.001");
+            if(y>0.001) Log.i(TAG,"y>0.001");
+            if(z>0.001) Log.i(TAG,"z>0.001");
+        }
+    };
 
 //llap zone
 private Handler updateviews =new Handler()
