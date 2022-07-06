@@ -405,6 +405,21 @@ public class MainActivity extends AppCompatActivity {
                     imageView.invalidate();
                     break;
 
+                case 5:
+                    double tmp5[]=(double[]) msg.obj;
+                    canvas.drawColor(Color.BLACK);
+                    //Log.i(TAG,"tmplen="+tmp5.length);
+                    for(int i=0;i<tmp5.length;i++)
+                    {
+                        short tmpp=(short)(Math.round(tmp5[i]));
+                        canvas.drawCircle(i,500-tmpp/2,6,paint);//用畫多個圓的方式得到更好效能
+                        //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
+
+                    }
+                    imageView.invalidate();
+
+                    break;
+
             }
             super.handleMessage(msg);
 
@@ -706,20 +721,42 @@ public class MainActivity extends AppCompatActivity {
                 //end of do inverse fft
                 double peak = -1.0;
                 int peak_location=-1;
+                int zero_location=-1;
+                int zero_flag=1;
                 int len=magnitude.length;
+                double spectrum_average=0;
+                double spectrum_total=0;
+                int data_nums=1024;
+                double spectrum_sd=0;
                 // Get the largest magnitude peak
-                for(int i = 0; i <len; i++){
+                for(int i = 0; i <data_nums; i++){
                     if(peak < Math.abs(spectrum[i])) {
                         peak = Math.abs(spectrum[i]);
                         peak_location = i;
                     }
-
-
+                    spectrum_total+=spectrum[i];
                 }
+                spectrum_average=spectrum_total/data_nums;
+                for(int i = 0; i <data_nums; i++)
+                {
+                    spectrum_sd+=Math.abs(spectrum[i]-spectrum_average);
+                }
+                spectrum_sd/=data_nums;
+                Log.i("MyTag","sd=" +spectrum_sd);
+
+                /*
+                if(peak_location<=32&&peak_location>=10&&peak>=17&&spectrum_total>=550)
+                {
+                    Log.i("MyTag","test stroke detect!");
+                }
+*/
+
+
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
                 //Log.i(TAG,"Most freq="+most_freq);
 
                 //three state counter if recently detected block for a moment to prevent error
+
                 if(stroke_state==0)
                 {
                     if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0)
@@ -727,6 +764,7 @@ public class MainActivity extends AppCompatActivity {
                         stroke_cnt++;
                         stroke_detected=true;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
+                        Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
                     }
                     else
@@ -749,6 +787,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
 
+
+
                 //to draw using handler by sending msg
                 Message msg = handlerMeasure.obtainMessage();
                 if(dodraw==0)
@@ -769,6 +809,12 @@ public class MainActivity extends AppCompatActivity {
                 {
                     msg.what = 4;
                     msg.obj = complexBuffer;
+                    handlerMeasure.sendMessage(msg);
+                }
+                else if(dodraw==3)//draw inv fft signal
+                {
+                    msg.what = 5;
+                    msg.obj = toTransform;
                     handlerMeasure.sendMessage(msg);
                 }
 
@@ -938,10 +984,10 @@ public class MainActivity extends AppCompatActivity {
         if(dowindow==0) {dowindow=1;txt_out.setText("window hanning v1");return;}
 
     }
-    private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
+    private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal 3是inv fft 後的音訊數據
     {
-
-        if(dodraw==2) {dodraw=0;txt_out.setText("draw spectrum"); return;}
+        if(dodraw==3) {dodraw=0;txt_out.setText("draw spectrum"); return;}
+        if(dodraw==2) {dodraw=3;txt_out.setText("draw inverse fft"); return;}
         if(dodraw==1) {dodraw=2;txt_out.setText("draw i/q signal"); return;}
         if(dodraw==0) {dodraw=1;txt_out.setText("draw input data");return;}
 
