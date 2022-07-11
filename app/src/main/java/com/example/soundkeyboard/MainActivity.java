@@ -8,6 +8,7 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -57,6 +58,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.time.LocalDateTime;
 
 import Catalano.Math.ComplexNumber;
@@ -876,7 +878,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     @RequiresApi(api = Build.VERSION_CODES.O)
     private static void copyFileUsingStream(File source, File dest) throws IOException {
         InputStream is = null;
@@ -1165,6 +1166,8 @@ public class MainActivity extends AppCompatActivity {
 //llap zone
 private Handler updateviews =new Handler()
 {
+    @SuppressLint("HandlerLeak")
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void handleMessage(Message msg)
     {
@@ -1192,10 +1195,35 @@ private Handler updateviews =new Handler()
             Log.i(TAG,"count" + tracecount);
             tracecount=0;
         }
+        boolean xydata = false;
+        if(xydata){
+            String text_x = texDistance_x.getText().toString();
+            String text_y = texDistance_y.getText().toString();
+            String abs_x = absolute_disx.getText().toString();
+            String abs_y = absolute_disy.getText().toString();
+            WriteStringFile(text_x,"test_x");
+            WriteStringFile(text_y,"text_y");
+            WriteStringFile(abs_x,"abs_x");
+            WriteStringFile(abs_y,"abs_y");
+        }
     }
 
 
 };
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void WriteStringFile(String data, String filename) {
+        String currentTime = LocalDateTime.now().toString();
+        File road = new File(getExternalCacheDir() + file.getName(), filename+currentTime);
+        FileOutputStream stream = null;
+        try {
+            stream = new FileOutputStream(road);
+            stream.write(data.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     class ThreadInstantPlay extends Thread
     {
         @Override
