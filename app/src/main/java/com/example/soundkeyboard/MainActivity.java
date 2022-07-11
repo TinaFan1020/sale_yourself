@@ -87,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
     SensorManager sensorManager;
     Sensor sensor;
+    Sensor sensor_gravity;
 
     //llap zone
 
@@ -210,7 +211,8 @@ public class MainActivity extends AppCompatActivity {
         perfectTune.setTuneAmplitude(50000);
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        sensor_gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         //String testc=testcc('c');
@@ -1102,26 +1104,61 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         sensorManager.registerListener(gyroListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(gyroListener, sensor_gravity, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public void onStop() {
         super.onStop();
         sensorManager.unregisterListener(gyroListener);
     }
-
+    int contttt=0;
     public SensorEventListener gyroListener = new SensorEventListener() {
         public void onAccuracyChanged(Sensor sensor, int acc) {
         }
 
         public void onSensorChanged(SensorEvent event) {
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
-            float movement=x+y+z;
+            if(event.sensor.getType()==Sensor.TYPE_GYROSCOPE) {
+                float x = event.values[0];
+                float y = event.values[1];
+                float z = event.values[2];
 
-            if(x>0.001) Log.i(TAG,"x>0.001");
-            if(y>0.001) Log.i(TAG,"y>0.001");
-            if(z>0.001) Log.i(TAG,"z>0.001");
+                float movement = x + y + z;
+
+                //if(Math.abs(x)>0.00115) Log.i(TAG,"x>0.0011");
+                //if (Math.abs(y) > 0.00115) Log.i(TAG, "y>0.0011");
+                //else if(Math.abs(y)>0.0011) Log.i(TAG,"else y>0.001");
+            }
+            if(event.sensor.getType()==Sensor.TYPE_GRAVITY) {
+                float[] gravity = new float[3];
+               float[] motion = new float[3];
+                double ratio;
+              double mAngle;
+                for(int i=0; i<3; i++) {
+                    gravity [i] = (float) (0.1 * event.values[i] + 0.9 * gravity[i]);
+                    motion[i] = event.values[i] - gravity[i];
+                }
+                ratio = gravity[1]/SensorManager.GRAVITY_EARTH;
+                if(ratio > 1.0) ratio = 1.0;
+                if(ratio < -1.0) ratio = -1.0;
+                mAngle = Math.toDegrees(Math.acos(ratio));
+                if(gravity[2] < 0) {
+                    mAngle = -mAngle;
+                }
+
+                    String msg = String.format(
+                            "Raw values\nX: %8.4f\nY: %8.4f\nZ: %8.4f\n" +
+                                    "Gravity\nX: %8.4f\nY: %8.4f\nZ: %8.4f\n" +
+                                    "Motion\nX: %8.4f\nY: %8.4f\nZ: %8.4f\nAngle: %8.1f",
+                            event.values[0], event.values[1], event.values[2],
+                            gravity[0], gravity[1], gravity[2],
+                            motion[0], motion[1], motion[2],
+                            mAngle);
+                    txt_out.setText(msg);
+                    txt_out.invalidate();
+
+
+            }
+
         }
     };
 
