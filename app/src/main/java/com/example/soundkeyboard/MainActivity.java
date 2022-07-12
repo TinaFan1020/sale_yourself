@@ -1147,7 +1147,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                     String msg = String.format(
-                            "Raw values\nX: %8.4f\nY: %8.4f\nZ: %8.4f\n" +
+                            "Raw values\nX: %8.5f\nY: %8.5f\nZ: %8.5f\n" +
                                     "Gravity\nX: %8.4f\nY: %8.4f\nZ: %8.4f\n" +
                                     "Motion\nX: %8.4f\nY: %8.4f\nZ: %8.4f\nAngle: %8.1f",
                             event.values[0], event.values[1], event.values[2],
