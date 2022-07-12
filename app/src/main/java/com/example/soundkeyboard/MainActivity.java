@@ -86,7 +86,9 @@ public class MainActivity extends AppCompatActivity {
     private final static String TAG = "MyTag";
     boolean stroke_detected=false;
     boolean stroke_flag=false;
-
+    boolean gravity_flag=false;//true=detected stroke
+    boolean too_much_flag=false;//true = too much
+    boolean triggered_flag=false;
     SensorManager sensorManager;
     Sensor sensor;
     Sensor sensor_gravity;
@@ -159,8 +161,8 @@ public class MainActivity extends AppCompatActivity {
     double most_freq = 0.0;//fft出來最大ㄉ頻率
     //////
     int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
-    int stroke_power_max = 500;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
-    int stroke_power_min = 50;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
+    int stroke_power_max = 400;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
+    int stroke_power_min = 45;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
     File file,file_org;
@@ -779,10 +781,11 @@ public class MainActivity extends AppCompatActivity {
 
                 if(stroke_state==0)
                 {
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0)
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false)
                     {
                         stroke_cnt++;
                         stroke_detected=true;
+                        triggered_flag=true;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
@@ -1113,10 +1116,11 @@ public class MainActivity extends AppCompatActivity {
         sensorManager.unregisterListener(gyroListener);
     }
     int contttt=0;
+    long last_time=-1,cur_time=-1,too_much_time=-1;
     public SensorEventListener gyroListener = new SensorEventListener() {
         public void onAccuracyChanged(Sensor sensor, int acc) {
         }
-
+        double lastx=0,lasty=0;
         public void onSensorChanged(SensorEvent event) {
             if(event.sensor.getType()==Sensor.TYPE_GYROSCOPE) {
                 float x = event.values[0];
@@ -1145,6 +1149,47 @@ public class MainActivity extends AppCompatActivity {
                 if(gravity[2] < 0) {
                     mAngle = -mAngle;
                 }
+                double dx=0,dy=0;
+                dx=lastx-event.values[0];
+                dx*=100000;
+                dy=lasty-event.values[1];
+                dy*=100000;
+                lastx=event.values[0];
+                lasty=event.values[1];
+                if(Math.abs(dx)>0.00004*100000&&Math.abs(dy)>0.00004*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
+                {
+                    if(gravity_flag==true)
+                    {
+                        cur_time=System.currentTimeMillis();
+                        if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                        if(cur_time-too_much_time>=800) too_much_flag=false;
+                    }
+                    else
+                    {
+                        gravity_flag=true;
+
+                        cur_time=System.currentTimeMillis();
+                        last_time=System.currentTimeMillis();
+                        if(cur_time-too_much_time>=800) too_much_flag=false;
+                        //Log.i(TAG,"gravity detected"+contttt);
+
+                    }
+                }else if(Math.abs(dx)>0.002*100000&&Math.abs(dy)>0.002*100000)
+                {
+                    Log.i(TAG,"too much");
+                    cur_time=System.currentTimeMillis();
+                    too_much_time=System.currentTimeMillis();
+                    too_much_flag=true;
+                    if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                }
+                else
+                {
+                    cur_time=System.currentTimeMillis();
+                    if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                    if(cur_time-too_much_time>=800) too_much_flag=false;
+                }
+                contttt++;
+
 
                     String msg = String.format(
                             "Raw values\nX: %8.5f\nY: %8.5f\nZ: %8.5f\n" +
@@ -1152,7 +1197,9 @@ public class MainActivity extends AppCompatActivity {
                             event.values[0], event.values[1], event.values[2],
                             motion[0], motion[1], motion[2]);
                     txt_out.setText(msg);
+                    txt_out.bringToFront();
                     txt_out.invalidate();
+                    btn_toggle_window.setVisibility(View.INVISIBLE);
 
 
             }
