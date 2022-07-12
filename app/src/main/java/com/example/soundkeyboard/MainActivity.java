@@ -1148,12 +1148,9 @@ public class MainActivity extends AppCompatActivity {
 
                     String msg = String.format(
                             "Raw values\nX: %8.5f\nY: %8.5f\nZ: %8.5f\n" +
-                                    "Gravity\nX: %8.4f\nY: %8.4f\nZ: %8.4f\n" +
-                                    "Motion\nX: %8.4f\nY: %8.4f\nZ: %8.4f\nAngle: %8.1f",
+                                    "Motion\nX: %8.5f\nY: %8.5f\nZ: %8.5f\n",
                             event.values[0], event.values[1], event.values[2],
-                            gravity[0], gravity[1], gravity[2],
-                            motion[0], motion[1], motion[2],
-                            mAngle);
+                            motion[0], motion[1], motion[2]);
                     txt_out.setText(msg);
                     txt_out.invalidate();
 
