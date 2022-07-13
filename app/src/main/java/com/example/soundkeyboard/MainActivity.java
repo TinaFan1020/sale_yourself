@@ -89,6 +89,10 @@ public class MainActivity extends AppCompatActivity {
     boolean gravity_flag=false;//true=detected stroke
     boolean too_much_flag=false;//true = too much
     boolean triggered_flag=false;
+    boolean firststroke_flag=true;//輸入一維距離實驗上下格的範圍
+    int firststroke_cnt=0;
+    double upper_section=0.0;
+    double lower_section=0.0;
     SensorManager sensorManager;
     Sensor sensor;
     Sensor sensor_gravity;
@@ -1196,9 +1200,9 @@ public class MainActivity extends AppCompatActivity {
                                     "Motion\nX: %8.5f\nY: %8.5f\nZ: %8.5f\n",
                             event.values[0], event.values[1], event.values[2],
                             motion[0], motion[1], motion[2]);
-                    txt_out.setText(msg);
-                    txt_out.bringToFront();
-                    txt_out.invalidate();
+                    //txt_out.setText(msg);
+                    //txt_out.bringToFront();
+                    //txt_out.invalidate();
                     btn_toggle_window.setVisibility(View.INVISIBLE);
 
 
@@ -1222,9 +1226,38 @@ private Handler updateviews =new Handler()
                 texDistance_y.setText(String.format("y=%04.2f", dischangey / 20) + "cm");
                 absolute_disx.setText(String.format("absolute x=%04.2f", disx/20) + "cm");
                 absolute_disy.setText(String.format("absolute y=%04.2f", disy/20) + "cm");
-                if(stroke_detected)
+                if(stroke_detected&&!firststroke_flag)
                 {
-                    txt_out.setText("stroke detected now!");
+                    //txt_out.setText("stroke detected now!");
+                    double input_dis=disy/20;
+                    double midbound=(lower_section-upper_section)/2;
+                    if(input_dis<=midbound&&input_dis>upper_section){
+                        Log.i(TAG, "stroke upper section");
+                        txt_out.setText("stroke upper section");
+                    }
+                    else if(input_dis>=midbound&&input_dis<=lower_section){
+                        Log.i(TAG, "stroke lower section");
+                        txt_out.setText("stroke lower section");
+                    }
+                    else{
+                        txt_out.setText("not in section");
+                    }
+                }
+                else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
+                {
+                    if(firststroke_cnt==0){
+                        upper_section=disy/20;
+                        firststroke_cnt++;
+                        txt_out.setText(String.format("upperbound=", upper_section) + "cm");
+                        Log.i(TAG, "stroke upperbound="+upper_section);
+                    }
+                    else if(firststroke_cnt==1){
+                        lower_section=disy/20;
+                        firststroke_cnt++;
+                        txt_out.setText(String.format("lowerbound=", lower_section) + "cm");
+                        firststroke_flag=false;
+                        Log.i(TAG, "stroke lowerbound="+lower_section);
+                    }
                 }
                 else
                 {
