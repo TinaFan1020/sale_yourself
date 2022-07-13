@@ -1230,7 +1230,7 @@ private Handler updateviews =new Handler()
                 {
                     //txt_out.setText("stroke detected now!");
                     double input_dis=disy/20;
-                    double midbound=(lower_section-upper_section)/2;
+                    double midbound=upper_section+(lower_section-upper_section)/2;
                     if(input_dis<=midbound&&input_dis>upper_section){
                         Log.i(TAG, "stroke upper section");
                         txt_out.setText("stroke upper section");
@@ -1241,22 +1241,27 @@ private Handler updateviews =new Handler()
                     }
                     else{
                         txt_out.setText("not in section");
+                        Log.i(TAG, "stroke not in section");
                     }
                 }
                 else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
                 {
                     if(firststroke_cnt==0){
                         upper_section=disy/20;
-                        firststroke_cnt++;
                         txt_out.setText(String.format("upperbound=", upper_section) + "cm");
                         Log.i(TAG, "stroke upperbound="+upper_section);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
                     }
                     else if(firststroke_cnt==1){
                         lower_section=disy/20;
-                        firststroke_cnt++;
                         txt_out.setText(String.format("lowerbound=", lower_section) + "cm");
                         firststroke_flag=false;
                         Log.i(TAG, "stroke lowerbound="+lower_section);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
                     }
                 }
                 else
