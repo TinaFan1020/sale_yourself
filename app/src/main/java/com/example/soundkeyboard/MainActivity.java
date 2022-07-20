@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
     boolean gravity_flag=false;//true=detected stroke
     boolean too_much_flag=false;//true = too much
     boolean triggered_flag=false;
+    boolean firststart_flag=false;//看是否為剛開啟llap按鍵
     boolean firststroke_flag=true;//輸入一維距離實驗上下格的範圍
     int firststroke_cnt=0;
     double upper_section=0.0;
@@ -164,7 +165,8 @@ public class MainActivity extends AppCompatActivity {
     private double dischangehist = 0;
 
     private double disx, disy;//note: x is upper mic y is lower mic on phone
-    private double tmpx=0,tmpy=0,dischangex=0,dischangey=0;
+    private double tmpx=0,tmpy=0,dischangex=0,dischangey=0;//相對距離計算用
+    private double lastx=0,lasty,changex=0,changey=0;//避免距離突然增加，計算與前次的相對距離
 
     private double displaydis = 0;
     //llap zone
@@ -293,8 +295,15 @@ public class MainActivity extends AppCompatActivity {
             {
                 btn_llap_start.setEnabled(true);
                 btn_llap_stop.setEnabled(false);
+                isCalibrated=false;
                 blnPlayRecord=false;
                 isCalibrated=false;
+                firststroke_cnt=0;
+                firststroke_flag=true;
+                upper_section=0.0;
+                lower_section=0.0;
+                firststart_flag=false;
+
 
             }
         });
@@ -1243,14 +1252,15 @@ private Handler updateviews =new Handler()
         if(msg.what== 0)
         {
             if(isCalibrated) {
-                texDistance_x.setText(String.format("x=%04.2f", dischangex / 20) + "cm");
-                texDistance_y.setText(String.format("y=%04.2f", dischangey / 20) + "cm");
-                absolute_disx.setText(String.format("absolute x=%04.2f", disx/20) + "cm");
-                absolute_disy.setText(String.format("absolute y=%04.2f", disy/20) + "cm");
+                texDistance_x.setText(String.format("x=%04.2f", dischangex / 10) + "cm");
+                texDistance_y.setText(String.format("y=%04.2f", dischangey / 10) + "cm");
+                absolute_disx.setText(String.format("absolute x=%04.2f", disx/10) + "cm");
+                absolute_disy.setText(String.format("absolute y=%04.2f", disy/10)+ "cm");
                 if(stroke_detected&&!firststroke_flag)
                 {
                     //txt_out.setText("stroke detected now!");
-                    double input_dis=disy/20;
+                    Log.i(TAG, "stroke distance="+disx/10+"cm");
+                    double input_dis=disx/10;
                     double midbound=upper_section+(lower_section-upper_section)/2;
                     if(input_dis<=midbound&&input_dis>upper_section){
                         Log.i(TAG, "stroke upper section"+input_dis);
@@ -1268,8 +1278,9 @@ private Handler updateviews =new Handler()
                 }
                 else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
                 {
+                    Log.i(TAG, "stroke distance="+disx/10+"cm");
                     if(firststroke_cnt==0){
-                        upper_section=disy/20;
+                        upper_section=disx/10;
                         txt_out.setText(String.format("upperbound=", upper_section) + "cm");
                         Log.i(TAG, "stroke upperbound="+upper_section);
                         firststroke_cnt++;
@@ -1277,7 +1288,7 @@ private Handler updateviews =new Handler()
 
                     }
                     else if(firststroke_cnt==1){
-                        lower_section=disy/20;
+                        lower_section=disx/10;
                         txt_out.setText(String.format("lowerbound=", lower_section) + "cm");
                         firststroke_flag=false;
                         Log.i(TAG, "stroke lowerbound="+lower_section);
@@ -1294,6 +1305,8 @@ private Handler updateviews =new Handler()
             else
             {texDistance_x.setText("Calibrating...");
                 texDistance_y.setText("");
+                absolute_disx.setText("");
+                absolute_disy.setText("");
 
             }
             Log.i(TAG,"count" + tracecount);
@@ -1417,6 +1430,8 @@ private Handler updateviews =new Handler()
                         //keep difference stable;
 
                         double disdiff,dissum;
+                        long last_time=0;
+                        long current_time=0;//避免距離突然增加太多
                         disdiff=dischange[0]-dischange[1];
                         dissum=dischange[0]+dischange[1];
                         dischangehist=dischangehist*0.5+disdiff*0.5;
@@ -1424,6 +1439,7 @@ private Handler updateviews =new Handler()
                         dischange[1]=(dissum-dischangehist)/2;
 
                         disx=disx+dischange[0];
+
                         if(disx>1000)
                             disx=1000;
                         if(disx<0)
@@ -1458,7 +1474,30 @@ private Handler updateviews =new Handler()
                             }
                         }
 
-
+                        /* 暫時無用的避免距離增加太多
+                        if(firststart_flag==false){
+                            lastx=disx;
+                            lasty=disy;
+                            firststart_flag=true;
+                            last_time=System.currentTimeMillis();
+                        }
+                        //計算
+                        current_time=System.currentTimeMillis();
+                        if(current_time-last_time>1000){
+                            last_time=System.currentTimeMillis();
+                            changex=disx-lastx;
+                            changey=disy-lasty;
+                            if((Math.abs(changex/10)>0.3) || (Math.abs(changey/10)>0.3) ){
+                                Log.i(TAG,"stroke change too much!");
+                                disx=lastx;
+                                disy=lasty;
+                            }
+                            else{
+                                lastx=disx;
+                                lasty=disy;
+                            }
+                        }*/
+                        //計算相對距離，敲擊為trigger
                         if((stroke_detected==true)&&(stroke_detected!=stroke_flag))
                         {
 
