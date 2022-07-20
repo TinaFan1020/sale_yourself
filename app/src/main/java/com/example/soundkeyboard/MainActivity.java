@@ -5,7 +5,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import java.util.LinkedList;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -36,6 +37,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+
+
+
+import java.io.FileReader;
+import java.util.Locale;
 
 import android.content.pm.ActivityInfo;
 import android.hardware.Sensor;
@@ -165,8 +171,8 @@ public class MainActivity extends AppCompatActivity {
     double most_freq = 0.0;//fft出來最大ㄉ頻率
     //////
     int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
-    int stroke_power_max = 400;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
-    int stroke_power_min = 45;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
+    int stroke_power_max = 180;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
+    int stroke_power_min = 20;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
     File file,file_org;
@@ -652,8 +658,8 @@ public class MainActivity extends AppCompatActivity {
                 do cut off frequency cut off frequency lower than lower and bigger than upper
                  */
                 //todo:這邊要做調整截斷頻率的東西
-                int lower=6000;
-                int upper=22000;
+                int lower=800;
+                int upper=23800;
                 toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
 
                 /*
@@ -743,6 +749,7 @@ public class MainActivity extends AppCompatActivity {
                 pos_avg_local=(double)pos_total_local/(double)pos_cnt_local;
                 pos_avg_global=(double)pos_total_global/(double)pos_cnt_global;
                 neg_avg_local=(double)neg_total_local/(double)audio_cnt_local;
+                Log.i(TAG,"lmax="+localmax);
 
                 //end of do inverse fft
                 double peak = -1.0;
@@ -779,7 +786,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
-                //Log.i(TAG,"Most freq="+most_freq);
+                Log.i(TAG,"Most freq="+most_freq);
 
                 //three state counter if recently detected block for a moment to prevent error
 
@@ -793,6 +800,17 @@ public class MainActivity extends AppCompatActivity {
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
+                    }
+                    else if(pos_avg_local<=stroke_power_min&&gravity_flag==true)
+                    {
+                        stroke_detected=false;
+                        Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+
+                    }
+                    else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
+                    {
+                        stroke_detected=false;
+                        Log.i(TAG,"fake stroke detected too much sound"+pos_avg_local);
                     }
                     else
                     {
@@ -1232,15 +1250,16 @@ private Handler updateviews =new Handler()
                     double input_dis=disy/20;
                     double midbound=upper_section+(lower_section-upper_section)/2;
                     if(input_dis<=midbound&&input_dis>upper_section){
-                        Log.i(TAG, "stroke upper section");
+                        Log.i(TAG, "stroke upper section"+input_dis);
                         txt_out.setText("stroke upper section");
                     }
                     else if(input_dis>=midbound&&input_dis<=lower_section){
-                        Log.i(TAG, "stroke lower section");
+                        Log.i(TAG, "stroke lower section"+input_dis);
                         txt_out.setText("stroke lower section");
                     }
                     else{
-                        txt_out.setText("not in section");
+                        txt_out.setText("not in section"+input_dis);
+                        Log.i(TAG, "not in section");
                         Log.i(TAG, "stroke not in section");
                     }
                 }
@@ -1266,7 +1285,7 @@ private Handler updateviews =new Handler()
                 }
                 else
                 {
-                    txt_out.setText("no stroke!");
+                    //txt_out.setText("no stroke!");
                 }
             }
             else
