@@ -20,6 +20,15 @@ add_library( # Specifies the name of the library.
              # Provides a relative path to your source file(s).
              src/main/cpp/mainactivity.c )
 
+add_library( # Specifies the name of the library.
+        vad_jni
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/vad_jni.c )
+
 find_library( # Sets the name of the path variable.
         log-lib
 
@@ -29,6 +38,7 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
         mainactivity
+        vad_jni
 
         # Links the target library to the log library
         # included in the NDK.

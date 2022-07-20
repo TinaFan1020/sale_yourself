@@ -74,8 +74,11 @@ import jfftpack.RealDoubleFFT;
 import  Catalano.Math.Transforms.HilbertTransform;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
-
+//VAD ZONE
+import com.konovalov.vad.Vad;
+import com.konovalov.vad.VadConfig;
+import com.konovalov.vad.example.recorder.VoiceRecorder;
+//VAD ZONE
 import com.karlotoy.perfectune.instance.PerfectTune;
 
 
