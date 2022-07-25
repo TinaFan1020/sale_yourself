@@ -1,15 +1,11 @@
 #include "webrtc/common_audio/vad/include/webrtc_vad.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "../../../../../../AppData/Local/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/jni.h"
-#include "../../../../../../AppData/Local/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/stdlib.h"
-#include "../../../../../../AppData/Local/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/stdio.h"
-#include "../../../../../../AppData/Local/Android/Sdk/ndk/21.4.7075529/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/string.h"
-
+#include <stdlib.h>
+#include <jni.h>
 
 VadInst *internalHandle;
 int sampleRate;
 int frameSize;
-
 
 JNIEXPORT jint JNICALL
 Java_com_konovalov_vad_Vad_nativeStart(JNIEnv *env, jobject obj, jint jSampleRate, jint jFrameSize,

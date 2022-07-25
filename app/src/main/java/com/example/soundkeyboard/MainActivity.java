@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
     boolean gravity_flag=false;//true=detected stroke
     boolean too_much_flag=false;//true = too much
     boolean triggered_flag=false;
+    boolean shake_triggered=false;
     boolean firststart_flag=false;//看是否為剛開啟llap按鍵
     boolean firststroke_flag=true;//輸入一維距離實驗上下格的範圍
     int firststroke_cnt=0;
@@ -463,6 +464,20 @@ public class MainActivity extends AppCompatActivity {
                     imageView.invalidate();
 
                     break;
+                case 6:
+                    double tmp6[]=(double[]) msg.obj;
+                    canvas.drawColor(Color.BLACK);
+                    Log.i(TAG,"draw shake");
+                    for(int i=0;i<tmp6.length;i++)
+                    {
+                        short tmpp=(short)(Math.ceil(tmp6[i]));
+                        //canvas.drawCircle(i,500-tmpp/2,6,paint);//用畫多個圓的方式得到更好效能
+                        for(int x=i*40;x<(i+1)*40;x++) canvas.drawLine(x,1000-(int)tmp6[i],x,1000, paint);
+
+                    }
+                    imageView.invalidate();
+
+                    break;
 
             }
             super.handleMessage(msg);
@@ -804,25 +819,36 @@ public class MainActivity extends AppCompatActivity {
 
                 if(stroke_state==0)
                 {
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false)
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
                     {
                         stroke_cnt++;
                         stroke_detected=true;
                         triggered_flag=true;
+                        shake_triggered=true;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
                     }
+                    else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==true)
+                    {
+                        stroke_detected=false;
+                        Log.i(TAG,"fake stroke detected shake triggered already!");
+                    }
+                    else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
+                    {
+                        stroke_detected=false;
+                       // Log.i(TAG,"fake stroke detected no shake!!");
+                    }
                     else if(pos_avg_local<=stroke_power_min&&gravity_flag==true)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+                       // Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
 
                     }
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected too much sound"+pos_avg_local);
+                        //Log.i(TAG,"fake stroke detected too much sound"+pos_avg_local);
                     }
                     else
                     {
@@ -1040,9 +1066,10 @@ public class MainActivity extends AppCompatActivity {
         if(dowindow==0) {dowindow=1;txt_out.setText("window hanning v1");return;}
 
     }
-    private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal 3是inv fft 後的音訊數據
+    private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal 3是inv fft 後的音訊數據 4是震動數據
     {
-        if(dodraw==3) {dodraw=0;txt_out.setText("draw spectrum"); return;}
+        if(dodraw==4) {dodraw=0;txt_out.setText("draw spectrum"); return;}
+        if(dodraw==3) {dodraw=4;txt_out.setText("draw shake"); return;}
         if(dodraw==2) {dodraw=3;txt_out.setText("draw inverse fft"); return;}
         if(dodraw==1) {dodraw=2;txt_out.setText("draw i/q signal"); return;}
         if(dodraw==0) {dodraw=1;txt_out.setText("draw input data");return;}
@@ -1152,9 +1179,12 @@ public class MainActivity extends AppCompatActivity {
     int contttt=0;
     long last_time=-1,cur_time=-1,too_much_time=-1;
     public SensorEventListener gyroListener = new SensorEventListener() {
+
         public void onAccuracyChanged(Sensor sensor, int acc) {
         }
         double lastx=0,lasty=0;
+        int data_cnt=0;
+        double[] shake_datas=new double[100];
         public void onSensorChanged(SensorEvent event) {
             if(event.sensor.getType()==Sensor.TYPE_GYROSCOPE) {
                 float x = event.values[0];
@@ -1190,7 +1220,7 @@ public class MainActivity extends AppCompatActivity {
                 dy*=100000;
                 lastx=event.values[0];
                 lasty=event.values[1];
-                if(Math.abs(dx)>0.00004*100000&&Math.abs(dy)>0.00004*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
+                if(Math.abs(dx)>0.000045*100000&&Math.abs(dy)>0.000045*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
                 {
                     if(gravity_flag==true)
                     {
@@ -1208,7 +1238,16 @@ public class MainActivity extends AppCompatActivity {
                         //Log.i(TAG,"gravity detected"+contttt);
 
                     }
-                }else if(Math.abs(dx)>0.002*100000&&Math.abs(dy)>0.002*100000)
+                }
+                else if(Math.abs(dx)<0.000005*100000&&Math.abs(dy)<0.000005*100000)
+                {
+                    shake_triggered=false;
+                    //Log.i(TAG,"small shake here!!");
+                    cur_time=System.currentTimeMillis();
+                    if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                    if(cur_time-too_much_time>=800) too_much_flag=false;
+                }
+                else if(Math.abs(dx)>0.002*100000&&Math.abs(dy)>0.002*100000)
                 {
                     Log.i(TAG,"too much");
                     cur_time=System.currentTimeMillis();
@@ -1223,13 +1262,28 @@ public class MainActivity extends AppCompatActivity {
                     if(cur_time-too_much_time>=800) too_much_flag=false;
                 }
                 contttt++;
+                dx*=10;
+                shake_datas[data_cnt]=dx;
+                data_cnt++;
+                if(data_cnt==100&&dodraw==4)
+                {
+                    Message msg = handlerMeasure.obtainMessage();
+                    msg.what = 6;
+                    msg.obj = shake_datas;
+                    handlerMeasure.sendMessage(msg);
+                    data_cnt=0;
+                }
+                else if(data_cnt==100) data_cnt=0;
 
 
                     String msg = String.format(
-                            "Raw values\nX: %8.5f\nY: %8.5f\nZ: %8.5f\n" +
-                                    "Motion\nX: %8.5f\nY: %8.5f\nZ: %8.5f\n",
-                            event.values[0], event.values[1], event.values[2],
-                            motion[0], motion[1], motion[2]);
+                            "Raw values\nX: %8.5f  Y: %8.5f\n" +
+                                    "Motion\nX: %8.5f  Y: %8.5f\n",
+                            event.values[0], event.values[1],
+                            motion[0], motion[1]);
+                    Log.i("filt",msg);
+
+
                     //txt_out.setText(msg);
                     //txt_out.bringToFront();
                     //txt_out.invalidate();
