@@ -99,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
     boolean too_much_flag=false;//true = too much
     boolean triggered_flag=false;
     boolean shake_triggered=false;
+    boolean stabled_flag=true;
+    int retrigger_flag=0;
     boolean firststart_flag=false;//看是否為剛開啟llap按鍵
     boolean firststroke_flag=true;//輸入一維距離實驗上下格的範圍
     int firststroke_cnt=0;
@@ -819,16 +821,20 @@ public class MainActivity extends AppCompatActivity {
 
                 if(stroke_state==0)
                 {
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0)
                     {
+
                         stroke_cnt++;
                         stroke_detected=true;
                         triggered_flag=true;
                         shake_triggered=true;
+                        retrigger_flag=1;
+                       // stabled_flag=false;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
                     }
+                    else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&retrigger_flag!=0) {stroke_detected=false; Log.i(TAG,"detect but not retrigger");}
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==true)
                     {
                         stroke_detected=false;
@@ -839,10 +845,10 @@ public class MainActivity extends AppCompatActivity {
                         stroke_detected=false;
                        // Log.i(TAG,"fake stroke detected no shake!!");
                     }
-                    else if(pos_avg_local<=stroke_power_min&&gravity_flag==true)
+                    else if(pos_avg_local<=stroke_power_min&&gravity_flag==true &&triggered_flag==false)
                     {
                         stroke_detected=false;
-                       // Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+                        Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
 
                     }
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
@@ -1185,6 +1191,9 @@ public class MainActivity extends AppCompatActivity {
         double lastx=0,lasty=0;
         int data_cnt=0;
         double[] shake_datas=new double[100];
+        int[][] stable_data=new int[5][2];
+
+        int stable_cnt;
         public void onSensorChanged(SensorEvent event) {
             if(event.sensor.getType()==Sensor.TYPE_GYROSCOPE) {
                 float x = event.values[0];
@@ -1220,12 +1229,15 @@ public class MainActivity extends AppCompatActivity {
                 dy*=100000;
                 lastx=event.values[0];
                 lasty=event.values[1];
-                if(Math.abs(dx)>0.000045*100000&&Math.abs(dy)>0.000045*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
+
+
+
+                if(Math.abs(dx)>0.00006*100000&&Math.abs(dy)>0.00006*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
                 {
                     if(gravity_flag==true)
                     {
                         cur_time=System.currentTimeMillis();
-                        if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                        if(cur_time-last_time>=350) {gravity_flag=false;triggered_flag=false;}
                         if(cur_time-too_much_time>=800) too_much_flag=false;
                     }
                     else
@@ -1238,27 +1250,30 @@ public class MainActivity extends AppCompatActivity {
                         //Log.i(TAG,"gravity detected"+contttt);
 
                     }
+                    if(retrigger_flag==2) retrigger_flag=0;
+
                 }
                 else if(Math.abs(dx)<0.000005*100000&&Math.abs(dy)<0.000005*100000)
                 {
+                    if(retrigger_flag==1) retrigger_flag=2;
                     shake_triggered=false;
                     //Log.i(TAG,"small shake here!!");
                     cur_time=System.currentTimeMillis();
-                    if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                    if(cur_time-last_time>=350) {gravity_flag=false;triggered_flag=false;}
                     if(cur_time-too_much_time>=800) too_much_flag=false;
                 }
-                else if(Math.abs(dx)>0.002*100000&&Math.abs(dy)>0.002*100000)
+                else if(Math.abs(dx)>=0.002*100000&&Math.abs(dy)>=0.002*100000)
                 {
                     Log.i(TAG,"too much");
                     cur_time=System.currentTimeMillis();
                     too_much_time=System.currentTimeMillis();
                     too_much_flag=true;
-                    if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                    if(cur_time-last_time>=350) {gravity_flag=false;triggered_flag=false;}
                 }
                 else
                 {
                     cur_time=System.currentTimeMillis();
-                    if(cur_time-last_time>=300) {gravity_flag=false;triggered_flag=false;}
+                    if(cur_time-last_time>=350) {gravity_flag=false;triggered_flag=false;}
                     if(cur_time-too_much_time>=800) too_much_flag=false;
                 }
                 contttt++;
@@ -1284,7 +1299,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("filt",msg);
 
 
-                    //txt_out.setText(msg);
+                    txt_out.setText(msg);
                     //txt_out.bringToFront();
                     //txt_out.invalidate();
                     btn_toggle_window.setVisibility(View.INVISIBLE);
