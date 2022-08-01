@@ -6,6 +6,8 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.util.Arrays;
 import java.util.LinkedList;
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -15,6 +17,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PorterDuff;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
@@ -37,7 +41,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
+import androidx.core.content.ContextCompat;
 
 
 import java.io.FileReader;
@@ -86,10 +90,14 @@ public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
     Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop;
     ImageView imageView;//最上面畫畫ㄉ
+    ImageView imageView2;//最下面顯示路徑的
     TextView txt_out,texDistance_x,texDistance_y,absolute_disx,absolute_disy;//中間顯示字ㄉ
     Bitmap bitmap;//最上面畫畫ㄉ
     Canvas canvas;//最上面畫畫ㄉ
     Paint paint;//最上面畫畫ㄉ
+    Bitmap bitmap2;//最下面路徑
+    Canvas canvas2;//最下面路徑
+    Paint paint2;//最下面路徑
     EditText frequency_text;//命名撞到 我改了變數名
     private String tmpfile;
     private final static String TAG = "MyTag";
@@ -154,8 +162,9 @@ public class MainActivity extends AppCompatActivity {
 
     private int[] trace_x = new int[1000];
     private int[] trace_y = new int[1000];
+    private  int trace[][]=new int[1000][3];
     private int tracecount = 0;
-
+    private int twodimsioncount = 0;
     private int playBufSize = 0;
     private boolean isCalibrated = false;
     private int now;
@@ -187,6 +196,10 @@ public class MainActivity extends AppCompatActivity {
     int dowindow=1;//用來開關window func 1是開 0是關
     int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
     PerfectTune perfectTune = new PerfectTune();
+    Path path = new Path();
+    int eventx=0;
+    int eventy=0;
+    int drawcount=1;//確認是不是第一筆畫的，1是第一筆0不是
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -221,11 +234,18 @@ public class MainActivity extends AppCompatActivity {
         btn_cal_sd.setOnClickListener(v -> cal_sd());
         //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
         bitmap = Bitmap.createBitmap((int) 4096, (int) 1000, Bitmap.Config.ARGB_8888);
+        bitmap2 = Bitmap.createBitmap((int) 100, (int) 100, Bitmap.Config.ARGB_8888);
+        canvas2= new Canvas(bitmap2);
         canvas = new Canvas(bitmap);
         paint = new Paint();
+        paint2= new Paint();
         paint.setColor(Color.GREEN);
+        paint2.setColor(Color.GREEN);
         imageView = (ImageView) this.findViewById(R.id.ImageView01);
+        imageView2=(ImageView)this.findViewById(R.id.imageView02);
         imageView.setImageBitmap(bitmap);
+        imageView2.setImageBitmap(bitmap2);
+        //path.moveTo(100, 100);
         tmpfile = getExternalCacheDir().getAbsolutePath();
         Log.i(TAG, "pid of main thread= " + Thread.currentThread().getId());
         imageView.invalidate();
@@ -306,8 +326,12 @@ public class MainActivity extends AppCompatActivity {
                 upper_section=0.0;
                 lower_section=0.0;
                 firststart_flag=false;
-
-
+                Arrays.fill(trace_x,0);
+                Arrays.fill(trace_y,0);
+                canvas2.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                canvas2.drawColor(Color.WHITE);
+                path.reset();
+                drawcount=1;
             }
         });
 
@@ -480,6 +504,7 @@ public class MainActivity extends AppCompatActivity {
                     imageView.invalidate();
 
                     break;
+
 
             }
             super.handleMessage(msg);
@@ -1073,8 +1098,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
     private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal 3是inv fft 後的音訊數據 4是震動數據
-    {
-        if(dodraw==4) {dodraw=0;txt_out.setText("draw spectrum"); return;}
+    {   if(dodraw==5) {dodraw=0;txt_out.setText("draw location spot");return;}
+        if(dodraw==4) {dodraw=5;txt_out.setText("draw spectrum"); return;}
         if(dodraw==3) {dodraw=4;txt_out.setText("draw shake"); return;}
         if(dodraw==2) {dodraw=3;txt_out.setText("draw inverse fft"); return;}
         if(dodraw==1) {dodraw=2;txt_out.setText("draw i/q signal"); return;}
@@ -1309,6 +1334,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
+    Message msg = handlerMeasure.obtainMessage();
 
 //llap zone
 private Handler updateviews =new Handler()
@@ -1370,6 +1396,41 @@ private Handler updateviews =new Handler()
                 {
                     //txt_out.setText("no stroke!");
                 }
+                int tmp[][] = (int[][]) msg.obj;//1為x 2為y
+                canvas2.drawColor(Color.WHITE);
+                paint2.setStyle(Paint.Style.STROKE);
+                paint2.setStrokeWidth(5);
+                paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
+                //paint2.setAntiAlias(true);
+                //Log.i(TAG, "IN the section try");
+                //path.moveTo(100, 100);//原點
+                //int eventx=100;
+                //int eventy=100;
+                for (int i = 0; i < tracecount; i++) {
+                    if(drawcount==1){
+                        path.moveTo(tmp[i][1]+50,tmp[i][2]+50);
+                        eventx=tmp[i][1]+50;
+                        eventy=tmp[i][2]+50;
+                        drawcount=0;
+                        continue;
+                    }
+                    int endx= (tmp[i][1]+50-eventx)/2+eventx;
+                    int endy= (tmp[i][2]+50-eventy)/2+eventy;
+                    path.quadTo(eventx,eventy,endx,endy);
+                    eventx=tmp[i][1]+50;
+                    eventy=tmp[i][2]+50;
+                    //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
+                    //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
+                    Log.i(TAG, "IN the section try" + "x= " + eventx + "y= " + eventy);
+                    //path.moveTo(eventx,eventy);
+
+                }
+                canvas2.drawPath(path, paint2);
+                path.moveTo(eventx,eventy);
+                imageView.invalidate();
+
+                twodimsioncount=0;/**/
+
             }
             else
             {texDistance_x.setText("Calibrating...");
@@ -1380,6 +1441,29 @@ private Handler updateviews =new Handler()
             }
             Log.i(TAG,"count" + tracecount);
             tracecount=0;
+        }
+        if(msg.what==1){
+            if(isCalibrated) {
+                int tmp[][] = (int[][]) msg.obj;//1為x 2為y
+                canvas2.drawColor(Color.WHITE);
+                paint2.setStyle(Paint.Style.STROKE);
+                paint2.setStrokeWidth(5);
+                paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
+                paint2.setAntiAlias(true);
+                Log.i(TAG, "draw location spot");
+                path.moveTo(500, 500);//原點
+
+                for (int i = 0; i < twodimsioncount; i++) {
+                    path.lineTo(tmp[i][1] * 100, tmp[i][2] * 100);
+                    //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
+                    //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
+                    Log.i(TAG, "IN the section try" + "x= " + tmp[i][1] + "y= " + tmp[i][2]);
+                }
+                canvas2.drawPath(path, paint2);
+                imageView2.invalidate();
+                msg.what= 0;
+                twodimsioncount=0;
+            }
         }
         boolean xydata = false;
         if(xydata){
@@ -1580,18 +1664,34 @@ private Handler updateviews =new Handler()
                         trace_x[tracecount]= (int) Math.round((disy*micdis1*micdis1-disx*micdis2*micdis2+disx*disy*(disy-disx))/2/(disx*micdis2+disy*micdis1));
                         trace_y[tracecount]=(int) Math.round(Math.sqrt(  Math.abs((disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
                         //trace_x[tracecount]= (int) Math.round(disx);
+
+                        trace[tracecount][1]=trace_x[tracecount];
+                        trace[tracecount][2]=trace_y[tracecount];
                         //trace_y[tracecount]=(int) Math.round(disy);
-                        Log.i(TAG,"x="+trace_x[tracecount]+"y="+trace_y[tracecount]);
+                        Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
                         tracecount++;
+                        twodimsioncount++;
+
 
                     }
-
+                    //Log.i(TAG,"IN the section count="+twodimsioncount);
+                    /*if(twodimsioncount>20){
+                        Message msg = new Message();
+                        msg.what = 1;
+                        msg.obj = trace;
+                        handlerMeasure.sendMessage(msg);
+                        //updateviews.sendMessage(msg);
+                        twodimsioncount=0;
+                        //Log.i(TAG,"IN the section");
+                    }*/
+                    //else if(tracecount==10) tracecount=0;
 
 
 
                     if(Math.abs(displaydis-disx)>2||(tracecount>10)) {
                         Message msg = new Message();
                         msg.what = 0;
+                        msg.obj = trace;
                         displaydis=disx;
                         updateviews.sendMessage(msg);
                     }
