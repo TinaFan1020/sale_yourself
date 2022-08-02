@@ -1408,17 +1408,17 @@ private Handler updateviews =new Handler()
                 //int eventy=100;
                 for (int i = 0; i < tracecount; i++) {
                     if(drawcount==1){
-                        path.moveTo(tmp[i][1]+50,tmp[i][2]+50);
-                        eventx=tmp[i][1]+50;
-                        eventy=tmp[i][2]+50;
+                        path.moveTo(tmp[i][1]+20,tmp[i][2]+20);
+                        eventx=tmp[i][1]+20;
+                        eventy=tmp[i][2]+20;
                         drawcount=0;
                         continue;
                     }
-                    int endx= (tmp[i][1]+50-eventx)/2+eventx;
-                    int endy= (tmp[i][2]+50-eventy)/2+eventy;
+                    int endx= (tmp[i][1]+20-eventx)/2+eventx;
+                    int endy= (tmp[i][2]+20-eventy)/2+eventy;
                     path.quadTo(eventx,eventy,endx,endy);
-                    eventx=tmp[i][1]+50;
-                    eventy=tmp[i][2]+50;
+                    eventx=tmp[i][1]+20;
+                    eventy=tmp[i][2]+20;
                     //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
                     //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
                     Log.i(TAG, "IN the section try" + "x= " + eventx + "y= " + eventy);
@@ -1441,29 +1441,6 @@ private Handler updateviews =new Handler()
             }
             Log.i(TAG,"count" + tracecount);
             tracecount=0;
-        }
-        if(msg.what==1){
-            if(isCalibrated) {
-                int tmp[][] = (int[][]) msg.obj;//1為x 2為y
-                canvas2.drawColor(Color.WHITE);
-                paint2.setStyle(Paint.Style.STROKE);
-                paint2.setStrokeWidth(5);
-                paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
-                paint2.setAntiAlias(true);
-                Log.i(TAG, "draw location spot");
-                path.moveTo(500, 500);//原點
-
-                for (int i = 0; i < twodimsioncount; i++) {
-                    path.lineTo(tmp[i][1] * 100, tmp[i][2] * 100);
-                    //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
-                    //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
-                    Log.i(TAG, "IN the section try" + "x= " + tmp[i][1] + "y= " + tmp[i][2]);
-                }
-                canvas2.drawPath(path, paint2);
-                imageView2.invalidate();
-                msg.what= 0;
-                twodimsioncount=0;
-            }
         }
         boolean xydata = false;
         if(xydata){
@@ -1699,6 +1676,7 @@ private Handler updateviews =new Handler()
                     {
                         Message msg = new Message();
                         msg.what = 0;
+                        msg.obj = trace;
                         updateviews.sendMessage(msg);
                     }
 
