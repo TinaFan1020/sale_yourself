@@ -233,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
         btn_stop_frequency.setOnClickListener(v -> onlick_frequency_stop());
         btn_cal_sd.setOnClickListener(v -> cal_sd());
         //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
-        bitmap = Bitmap.createBitmap((int) 4096, (int) 1000, Bitmap.Config.ARGB_8888);
+        bitmap = Bitmap.createBitmap((int) 4096, (int) 1400, Bitmap.Config.ARGB_8888);
         bitmap2 = Bitmap.createBitmap((int) 100, (int) 100, Bitmap.Config.ARGB_8888);
         canvas2= new Canvas(bitmap2);
         canvas = new Canvas(bitmap);
@@ -439,8 +439,8 @@ public class MainActivity extends AppCompatActivity {
                     for (int i = 0; i < tmp.length; i++) {
                         int x = i;
 
-                        int downy = (int) (1000 - (tmp[i] * 100));
-                        int upy = 1000;
+                        int downy = (int) (1400 - (tmp[i] * 100));
+                        int upy = 1400;
 
                         canvas.drawLine(x, downy, x, upy, paint);
                     }
@@ -453,7 +453,7 @@ public class MainActivity extends AppCompatActivity {
 
                     for(int i=0;i<tmp3.length;i++)
                     {
-                        canvas.drawCircle(i,500-tmp3[i]/10,6,paint);//用畫多個圓的方式得到更好效能
+                        canvas.drawCircle(i,700-tmp3[i]/10,6,paint);//用畫多個圓的方式得到更好效能
                         //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
 
                     }
@@ -468,9 +468,9 @@ public class MainActivity extends AppCompatActivity {
                     {
                         //i is green q is red
                         paint.setColor(Color.GREEN);
-                        canvas.drawCircle(i,500-(float)tmp4[i].real/10,6,paint);
+                        canvas.drawCircle(i,700-(float)tmp4[i].real/10,6,paint);
                         paint.setColor(Color.RED);
-                        canvas.drawCircle(i,500-(float)tmp4[i].imaginary/20,6,paint);
+                        canvas.drawCircle(i,700-(float)tmp4[i].imaginary/20,6,paint);
 
                     }
                     imageView.invalidate();
@@ -483,7 +483,7 @@ public class MainActivity extends AppCompatActivity {
                     for(int i=0;i<tmp5.length;i++)
                     {
                         short tmpp=(short)(Math.round(tmp5[i]));
-                        canvas.drawCircle(i,500-tmpp/2,6,paint);//用畫多個圓的方式得到更好效能
+                        canvas.drawCircle(i,700-tmpp/2,6,paint);//用畫多個圓的方式得到更好效能
                         //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
 
                     }
@@ -498,12 +498,38 @@ public class MainActivity extends AppCompatActivity {
                     {
                         short tmpp=(short)(Math.ceil(tmp6[i]));
                         //canvas.drawCircle(i,500-tmpp/2,6,paint);//用畫多個圓的方式得到更好效能
-                        for(int x=i*40;x<(i+1)*40;x++) canvas.drawLine(x,1000-(int)tmp6[i],x,1000, paint);
+                        for(int x=i*40;x<(i+1)*40;x++) canvas.drawLine(x,1400-(int)tmp6[i],x,1400, paint);
 
                     }
                     imageView.invalidate();
 
                     break;
+
+                case 7://baseband
+                    double[] tmp7 =(double[]) msg.obj;
+                    canvas.drawColor(Color.BLACK);
+
+                    for(int i=0;i<4095;i++)
+                    {
+                        //canvas.drawCircle(i, Math.round(500-tmp7[i/2]),6,paint);
+                        Log.i("basedata","i= "+i+" data= "+tmp7[i/2]);
+                        canvas.drawLine(i,700-Math.round(tmp7[i/2]*4),i+1,700-Math.round(tmp7[(i+1)/2]*4), paint);
+                    }
+                    imageView.invalidate();
+                    //Log.i("draw_baseband",""+baseband[1024]);
+                    break;
+
+                case 8://baseband nodc
+                    double[] tmp8 =(double[]) msg.obj;
+                    canvas.drawColor(Color.BLACK);
+                    for(int i=0;i<4096;i++)
+                    {
+                        canvas.drawCircle(i, Math.round(700-tmp8[i/2]*5),4,paint);
+                    }
+                    imageView.invalidate();
+                    //Log.i("draw_baseband",""+baseband[1024]);
+                    break;
+
 
 
             }
@@ -1097,13 +1123,16 @@ public class MainActivity extends AppCompatActivity {
         if(dowindow==0) {dowindow=1;txt_out.setText("window hanning v1");return;}
 
     }
-    private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal 3是inv fft 後的音訊數據 4是震動數據
-    {   if(dodraw==5) {dodraw=0;txt_out.setText("draw location spot");return;}
-        if(dodraw==4) {dodraw=5;txt_out.setText("draw spectrum"); return;}
-        if(dodraw==3) {dodraw=4;txt_out.setText("draw shake"); return;}
-        if(dodraw==2) {dodraw=3;txt_out.setText("draw inverse fft"); return;}
-        if(dodraw==1) {dodraw=2;txt_out.setText("draw i/q signal"); return;}
-        if(dodraw==0) {dodraw=1;txt_out.setText("draw input data");return;}
+    private void toggledarw()////用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal 3是inv fft 後的音訊數據 4是震動數據 5是??? 6是baseband 7是baseband沒dc
+    {
+        if(dodraw==7) {dodraw=0;txt_out.setText("draw spectrum");btn_toggle_draw.setText("draw spectrum");return;}
+        if(dodraw==6) {dodraw=7;txt_out.setText("draw baseband_nodc");btn_toggle_draw.setText("draw baseband nodc");return;}
+        if(dodraw==5) {dodraw=6;txt_out.setText("draw baseband");btn_toggle_draw.setText("draw baseband");return;}
+        if(dodraw==4) {dodraw=5;txt_out.setText("draw location");btn_toggle_draw.setText("draw location"); return;}
+        if(dodraw==3) {dodraw=4;txt_out.setText("draw shake");btn_toggle_draw.setText("draw shake"); return;}
+        if(dodraw==2) {dodraw=3;txt_out.setText("draw inverse fft"); btn_toggle_draw.setText("inv fft");return;}
+        if(dodraw==1) {dodraw=2;txt_out.setText("draw i/q signal");btn_toggle_draw.setText("draw i/q"); return;}
+        if(dodraw==0) {dodraw=1;txt_out.setText("draw input data");btn_toggle_draw.setText("draw input");return;}
 
     }
     //given input spectrum set frequcncy between lower upper =0
@@ -1316,15 +1345,15 @@ public class MainActivity extends AppCompatActivity {
                 else if(data_cnt==100) data_cnt=0;
 
 
-                    String msg = String.format(
+                    String shakevalue = String.format(
                             "Raw values\nX: %8.5f  Y: %8.5f\n" +
                                     "Motion\nX: %8.5f  Y: %8.5f\n",
                             event.values[0], event.values[1],
                             motion[0], motion[1]);
-                    Log.i("filt",msg);
+                    Log.i("filt",shakevalue);
 
 
-                    txt_out.setText(msg);
+                    txt_out.setText(shakevalue);
                     //txt_out.bringToFront();
                     //txt_out.invalidate();
                     btn_toggle_window.setVisibility(View.INVISIBLE);
@@ -1337,6 +1366,7 @@ public class MainActivity extends AppCompatActivity {
     Message msg = handlerMeasure.obtainMessage();
 
 //llap zone
+@SuppressLint("HandlerLeak")
 private Handler updateviews =new Handler()
 {
     @SuppressLint("HandlerLeak")
@@ -1408,17 +1438,17 @@ private Handler updateviews =new Handler()
                 //int eventy=100;
                 for (int i = 0; i < tracecount; i++) {
                     if(drawcount==1){
-                        path.moveTo(tmp[i][1]+50,tmp[i][2]+50);
-                        eventx=tmp[i][1]+50;
-                        eventy=tmp[i][2]+50;
+                        path.moveTo(tmp[i][1]+20,tmp[i][2]+20);
+                        eventx=tmp[i][1]+20;
+                        eventy=tmp[i][2]+20;
                         drawcount=0;
                         continue;
                     }
-                    int endx= (tmp[i][1]+50-eventx)/2+eventx;
-                    int endy= (tmp[i][2]+50-eventy)/2+eventy;
+                    int endx= (tmp[i][1]+20-eventx)/2+eventx;
+                    int endy= (tmp[i][2]+20-eventy)/2+eventy;
                     path.quadTo(eventx,eventy,endx,endy);
-                    eventx=tmp[i][1]+50;
-                    eventy=tmp[i][2]+50;
+                    eventx=tmp[i][1]+20;
+                    eventy=tmp[i][2]+20;
                     //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
                     //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
                     Log.i(TAG, "IN the section try" + "x= " + eventx + "y= " + eventy);
@@ -1441,29 +1471,6 @@ private Handler updateviews =new Handler()
             }
             Log.i(TAG,"count" + tracecount);
             tracecount=0;
-        }
-        if(msg.what==1){
-            if(isCalibrated) {
-                int tmp[][] = (int[][]) msg.obj;//1為x 2為y
-                canvas2.drawColor(Color.WHITE);
-                paint2.setStyle(Paint.Style.STROKE);
-                paint2.setStrokeWidth(5);
-                paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
-                paint2.setAntiAlias(true);
-                Log.i(TAG, "draw location spot");
-                path.moveTo(500, 500);//原點
-
-                for (int i = 0; i < twodimsioncount; i++) {
-                    path.lineTo(tmp[i][1] * 100, tmp[i][2] * 100);
-                    //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
-                    //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
-                    Log.i(TAG, "IN the section try" + "x= " + tmp[i][1] + "y= " + tmp[i][2]);
-                }
-                canvas2.drawPath(path, paint2);
-                imageView2.invalidate();
-                msg.what= 0;
-                twodimsioncount=0;
-            }
         }
         boolean xydata = false;
         if(xydata){
@@ -1529,6 +1536,7 @@ private Handler updateviews =new Handler()
             /*
              *
              */
+            long lasttime=0,nowtime=0;
             while (blnPlayRecord) {
                 /*
                  *
@@ -1543,21 +1551,53 @@ private Handler updateviews =new Handler()
                     //get baseband
 
 
-                    starttime=System.currentTimeMillis();
-                    Log.i(TAG, getbaseband(bsRecord, baseband, line / 2));//do cic
-                    endtime=System.currentTimeMillis();
 
+                    Log.i("BASEBAND", getbaseband(bsRecord, baseband, line / 2));//do cic
+
+//TODO OBSERVE BASEBAND(length=2048)
                    // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
 
-                    starttime=System.currentTimeMillis();
-                    Log.i(TAG, removedc(baseband, baseband_nodc, dcvalue));
-                    endtime=System.currentTimeMillis();
 
-                   // Log.i(TAG,"time used LEVD:"+(endtime-starttime));
+                    Log.i("REMOVEDC", removedc(baseband, baseband_nodc, dcvalue)+baseband_nodc.length);
+                    nowtime=System.currentTimeMillis();
+                    if(dodraw==6&&nowtime-lasttime>200)
+                    {
+                        Message msg = handlerMeasure.obtainMessage();
+                        msg.what = 7;
+                        msg.obj = baseband;
+                        handlerMeasure.sendMessage(msg);
+                        lasttime=System.currentTimeMillis();
 
-                    starttime=System.currentTimeMillis();
-                    Log.i(TAG, getdistance(baseband_nodc, phasechange, dischange, freqpower));
-                    endtime=System.currentTimeMillis();
+                    }
+                    if(dodraw==7&&nowtime-lasttime>200)
+                    {
+                        Message msg = handlerMeasure.obtainMessage();
+                        msg.what = 8;
+                        msg.obj = baseband_nodc;
+                        handlerMeasure.sendMessage(msg);
+                        lasttime=System.currentTimeMillis();
+
+                    }
+
+//TODO OBSERVE BASEBAND_NODC(length=2048) DCVALUE(length=64)
+/*
+                    for(int i=0;i<freqpower.length;i++)
+                    {
+                        if(freqpower[i]!=0) Log.i("freqpower0",""+i+" "+freqpower[i]);
+                    }
+
+ */
+
+                    Log.i("GETDISTANCE", getdistance(baseband_nodc, phasechange, dischange, freqpower)+" "+freqpower.length);
+//TODO phasechange is hidden in c program and freqpower(useless) is always 0
+                    /*
+                    for(int i=0;i<freqpower.length;i++)
+                    {
+                        if(freqpower[i]!=0) Log.i("freqpower",""+i+" "+freqpower[i]);
+                    }
+
+
+                     */
 
                     //Log.i(TAG,"time used distance:"+(endtime-starttime));
 
@@ -1566,7 +1606,7 @@ private Handler updateviews =new Handler()
 
 
                         c_result=calibrate(baseband);
-                        Log.i(TAG,c_result) ;
+                        Log.i("CALIBRATE",c_result) ;
                         lastcalibration=now;
                         if(c_result.equals("calibrate OK")){
                             isCalibrated=true;
@@ -1574,11 +1614,13 @@ private Handler updateviews =new Handler()
 
                     }
                     if(isCalibrated) {
-                        starttime = System.currentTimeMillis();
-                        Log.i(TAG,getidftdistance(baseband_nodc, idftdis));
-                        endtime = System.currentTimeMillis();
 
-                      //  Log.i(TAG,"time used idftdistance:" + (endtime - starttime));
+                        Log.i("GETIDFT",getidftdistance(baseband_nodc, idftdis));
+                        //idftdis is always 0
+                        if(idftdis[0]!=0||idftdis[1]!=0)
+                        {
+                            Log.i("testidft","x= "+idftdis[0]+" y= "+idftdis[1]);
+                        }
 
                         //keep difference stable;
 
@@ -1699,6 +1741,7 @@ private Handler updateviews =new Handler()
                     {
                         Message msg = new Message();
                         msg.what = 0;
+                        msg.obj = trace;
                         updateviews.sendMessage(msg);
                     }
 
