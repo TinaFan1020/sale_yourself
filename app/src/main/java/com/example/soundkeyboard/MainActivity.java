@@ -253,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
         perfectTune.setTuneAmplitude(50000);
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-            sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         sensor_gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
@@ -444,7 +444,7 @@ public class MainActivity extends AppCompatActivity {
 
                         canvas.drawLine(x, downy, x, upy, paint);
                     }
-                        imageView.invalidate();
+                    imageView.invalidate();
 
                     break;
                 case 3:
@@ -880,7 +880,7 @@ public class MainActivity extends AppCompatActivity {
                         triggered_flag=true;
                         shake_triggered=true;
                         retrigger_flag=1;
-                       // stabled_flag=false;
+                        // stabled_flag=false;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
@@ -894,7 +894,7 @@ public class MainActivity extends AppCompatActivity {
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
                     {
                         stroke_detected=false;
-                       // Log.i(TAG,"fake stroke detected no shake!!");
+                        // Log.i(TAG,"fake stroke detected no shake!!");
                     }
                     else if(pos_avg_local<=stroke_power_min&&gravity_flag==true &&triggered_flag==false)
                     {
@@ -978,16 +978,68 @@ public class MainActivity extends AppCompatActivity {
 
             }
             audioRecord.stop();
-
+            String currentTime = LocalDateTime.now().toString();
             boolean train_fft = true;
             if(train_fft){
-                File des = new File(getExternalCacheDir()+file.getName());
+
+                File des = new File(getExternalCacheDir()+currentTime+file.getName());
                 copyFileUsingStream(file,des);
             }
             boolean train_unfft = true;
             if(train_unfft){
-                File des = new File(getExternalCacheDir()+file_org.getName());
+
+                File des = new File(getExternalCacheDir()+currentTime+file_org.getName());
                 copyFileUsingStream(file_org,des);
+            }
+            boolean train_fft_towav_v1 = false;
+            if(train_fft_towav_v1)
+            {
+
+                String path=getExternalCacheDir()+"/"+file.getName();
+                String outpath = path.replace(".pcm", ".wav");
+                File wavfile = new File(outpath);
+                PCMToWAV(file_org,wavfile,1,48000,16);
+                File des = new File(getExternalCacheDir()+currentTime+wavfile.getName());
+                copyFileUsingStream(wavfile,des);
+
+            }
+            boolean train_unfft_towav_v1 = false;
+            if(train_unfft_towav_v1)
+            {
+
+                String path=getExternalCacheDir()+"/"+file_org.getName();
+                String outpath = path.replace(".pcm", ".wav");
+                File wavfile = new File(outpath);
+                PCMToWAV(file_org,wavfile,1,48000,16);
+                File des = new File(getExternalCacheDir()+currentTime+wavfile.getName());
+                copyFileUsingStream(wavfile,des);
+
+            }
+            boolean train_fft_towav_v2 = true;
+            if(train_fft_towav_v2)
+            {
+                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
+                String path=getExternalCacheDir()+"/"+file.getName();
+                String outpath = path.replace(".pcm", ".wav");
+                pcmToWavUtil.pcmToWav(path, outpath);
+                File souce = new File(outpath);
+                File des = new File(getExternalCacheDir()+currentTime+"audio_fft.wav");
+                copyFileUsingStream(souce,des);
+
+
+            }
+            boolean train_unfft_towav_v2 = true;
+            if(train_unfft_towav_v2)
+            {
+                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
+                String path=getExternalCacheDir()+"/"+file_org.getName();
+                String outpath = path.replace(".pcm", ".wav");
+                pcmToWavUtil.pcmToWav(path, outpath);
+                File souce = new File(outpath);
+                File des = new File(getExternalCacheDir()+currentTime+"audio_org.wav");
+                copyFileUsingStream(souce,des);
+
+
             }
 
             dos.close();
@@ -997,6 +1049,85 @@ public class MainActivity extends AppCompatActivity {
             t.printStackTrace();
         }
     }
+    /**
+     * @param input         raw PCM data
+     *                      limit of file size for wave file: < 2^(2*4) - 36 bytes (~4GB)
+     * @param output        file to encode to in wav format
+     * @param channelCount  number of channels: 1 for mono, 2 for stereo, etc.
+     * @param sampleRate    sample rate of PCM audio
+     * @param bitsPerSample bits per sample, i.e. 16 for PCM16
+     * @throws IOException in event of an error between input/output files
+     * @see <a href="http://soundfile.sapp.org/doc/WaveFormat/">soundfile.sapp.org/doc/WaveFormat</a>
+     */
+    static public void PCMToWAV(File input, File output, int channelCount, int sampleRate, int bitsPerSample) throws IOException {
+        final int inputSize = (int) input.length();
+
+        try (OutputStream encoded = new FileOutputStream(output)) {
+            // WAVE RIFF header
+            writeToOutput(encoded, "RIFF"); // chunk id
+            writeToOutput(encoded, 36 + inputSize); // chunk size
+            writeToOutput(encoded, "WAVE"); // format
+
+            // SUB CHUNK 1 (FORMAT)
+            writeToOutput(encoded, "fmt "); // subchunk 1 id
+            writeToOutput(encoded, 16); // subchunk 1 size
+            writeToOutput(encoded, (short) 1); // audio format (1 = PCM)
+            writeToOutput(encoded, (short) channelCount); // number of channelCount
+            writeToOutput(encoded, sampleRate); // sample rate
+            writeToOutput(encoded, sampleRate * channelCount * bitsPerSample / 8); // byte rate
+            writeToOutput(encoded, (short) (channelCount * bitsPerSample / 8)); // block align
+            writeToOutput(encoded, (short) bitsPerSample); // bits per sample
+
+            // SUB CHUNK 2 (AUDIO DATA)
+            writeToOutput(encoded, "data"); // subchunk 2 id
+            writeToOutput(encoded, inputSize); // subchunk 2 size
+            copy(new FileInputStream(input), encoded);
+        }
+    }
+
+
+    /**
+     * Size of buffer used for transfer, by default
+     */
+    private static final int TRANSFER_BUFFER_SIZE = 10 * 1024;
+
+    /**
+     * Writes string in big endian form to an output stream
+     *
+     * @param output stream
+     * @param data   string
+     * @throws IOException
+     */
+    public static void writeToOutput(OutputStream output, String data) throws IOException {
+        for (int i = 0; i < data.length(); i++)
+            output.write(data.charAt(i));
+    }
+
+    public static void writeToOutput(OutputStream output, int data) throws IOException {
+        output.write(data >> 0);
+        output.write(data >> 8);
+        output.write(data >> 16);
+        output.write(data >> 24);
+    }
+
+    public static void writeToOutput(OutputStream output, short data) throws IOException {
+        output.write(data >> 0);
+        output.write(data >> 8);
+    }
+
+    public static long copy(InputStream source, OutputStream output)
+            throws IOException {
+        return copy(source, output, TRANSFER_BUFFER_SIZE);
+    }
+
+    public static long copy(InputStream source, OutputStream output, int bufferSize) throws IOException {
+        long read = 0L;
+        byte[] buffer = new byte[bufferSize];
+        for (int n; (n = source.read(buffer)) != -1; read += n) {
+            output.write(buffer, 0, n);
+        }
+        return read;
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private static void copyFileUsingStream(File source, File dest) throws IOException {
@@ -1005,13 +1136,18 @@ public class MainActivity extends AppCompatActivity {
         try {
             is = new FileInputStream(source);
             String currentTime = LocalDateTime.now().toString();
-            os = new FileOutputStream(dest + currentTime);
+            os = new FileOutputStream(dest);
             byte[] buffer = new byte[1024];
             int length;
             while ((length = is.read(buffer)) > 0) {
                 os.write(buffer, 0, length);
             }
-        } finally {
+        }
+        catch (IOException e)
+        {
+            Log.i("exception",e.toString());
+        }
+        finally {
             is.close();
             os.close();
         }
@@ -1105,13 +1241,13 @@ public class MainActivity extends AppCompatActivity {
         double h_wnd[] = new double[windowSize]; // Hanning window
         if(dowindow==1)//hanning window
             for (int i = 0; i < windowSize; i++) { // calculate the hanning window
-            h_wnd[i] = 0.5d * (1d - Math.cos(2.0 * Math.PI * i / (windowSize - 1)));
+                h_wnd[i] = 0.5d * (1d - Math.cos(2.0 * Math.PI * i / (windowSize - 1)));
 
-        }
+            }
         if(dowindow==2)//hamming
             for (int i = 0; i < windowSize; i++) { // calculate the hamming window
-            h_wnd[i] = 0.54d - 0.46d*Math.cos(2.0 * Math.PI * i / (windowSize - 1));
-        }
+                h_wnd[i] = 0.54d - 0.46d*Math.cos(2.0 * Math.PI * i / (windowSize - 1));
+            }
         return h_wnd;
     }
 
@@ -1152,24 +1288,24 @@ public class MainActivity extends AppCompatActivity {
         }
         return spectrum;
     }
-//use it after fft
+    //use it after fft
 //affect on fft data itself
 //會截斷某lower~upper的頻率範圍
     private double[] to_transform_cut_frequency(double[] toTransform ,int lower_bound,int upper_bound,int frequency,int fftsize) {
         int len = toTransform.length;
 
 
-            for (int index = 1; index < len; index = index + 2)
-            {//index=1 3 5... i=1 2 3(index+1)/2...
-                int i = (index + 1) / 2;
-                double freq = (double)((double)frequency * (double)i)/(double)(fftsize);
-                if(freq>=lower_bound-10&&freq<=upper_bound+10)
-                {
-                    toTransform[index]=0;
-                    toTransform[index+1]=0;
-                }
+        for (int index = 1; index < len; index = index + 2)
+        {//index=1 3 5... i=1 2 3(index+1)/2...
+            int i = (index + 1) / 2;
+            double freq = (double)((double)frequency * (double)i)/(double)(fftsize);
+            if(freq>=lower_bound-10&&freq<=upper_bound+10)
+            {
+                toTransform[index]=0;
+                toTransform[index+1]=0;
             }
-            return toTransform;
+        }
+        return toTransform;
     }
     private void cal_sd()
     {
@@ -1262,9 +1398,9 @@ public class MainActivity extends AppCompatActivity {
             }
             if(event.sensor.getType()==Sensor.TYPE_GRAVITY) {
                 float[] gravity = new float[3];
-               float[] motion = new float[3];
+                float[] motion = new float[3];
                 double ratio;
-              double mAngle;
+                double mAngle;
                 for(int i=0; i<3; i++) {
                     gravity [i] = (float) (0.1 * event.values[i] + 0.9 * gravity[i]);
                     motion[i] = event.values[i] - gravity[i];
@@ -1345,18 +1481,18 @@ public class MainActivity extends AppCompatActivity {
                 else if(data_cnt==100) data_cnt=0;
 
 
-                    String shakevalue = String.format(
-                            "Raw values\nX: %8.5f  Y: %8.5f\n" +
-                                    "Motion\nX: %8.5f  Y: %8.5f\n",
-                            event.values[0], event.values[1],
-                            motion[0], motion[1]);
-                    Log.i("filt",shakevalue);
+                String shakevalue = String.format(
+                        "Raw values\nX: %8.5f  Y: %8.5f\n" +
+                                "Motion\nX: %8.5f  Y: %8.5f\n",
+                        event.values[0], event.values[1],
+                        motion[0], motion[1]);
+                Log.i("filt",shakevalue);
 
 
-                    txt_out.setText(shakevalue);
-                    //txt_out.bringToFront();
-                    //txt_out.invalidate();
-                    btn_toggle_window.setVisibility(View.INVISIBLE);
+                txt_out.setText(shakevalue);
+                //txt_out.bringToFront();
+                //txt_out.invalidate();
+                btn_toggle_window.setVisibility(View.INVISIBLE);
 
 
             }
@@ -1365,128 +1501,128 @@ public class MainActivity extends AppCompatActivity {
     };
     Message msg = handlerMeasure.obtainMessage();
 
-//llap zone
-@SuppressLint("HandlerLeak")
-private Handler updateviews =new Handler()
-{
+    //llap zone
     @SuppressLint("HandlerLeak")
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    public void handleMessage(Message msg)
+    private Handler updateviews =new Handler()
     {
-        if(msg.what== 0)
+        @SuppressLint("HandlerLeak")
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        @Override
+        public void handleMessage(Message msg)
         {
-            if(isCalibrated) {
-                texDistance_x.setText(String.format("x=%04.2f", dischangex / 10) + "cm");
-                texDistance_y.setText(String.format("y=%04.2f", dischangey / 10) + "cm");
-                absolute_disx.setText(String.format("absolute x=%04.2f", disx/10) + "cm");
-                absolute_disy.setText(String.format("absolute y=%04.2f", disy/10)+ "cm");
-                if(stroke_detected&&!firststroke_flag)
-                {
-                    //txt_out.setText("stroke detected now!");
-                    Log.i(TAG, "stroke distance="+disx/10+"cm");
-                    double input_dis=disx/10;
-                    double midbound=upper_section+(lower_section-upper_section)/2;
-                    if(input_dis<=midbound&&input_dis>upper_section){
-                        Log.i(TAG, "stroke upper section"+input_dis);
-                        txt_out.setText("stroke upper section");
+            if(msg.what== 0)
+            {
+                if(isCalibrated) {
+                    texDistance_x.setText(String.format("x=%04.2f", dischangex / 10) + "cm");
+                    texDistance_y.setText(String.format("y=%04.2f", dischangey / 10) + "cm");
+                    absolute_disx.setText(String.format("absolute x=%04.2f", disx/10) + "cm");
+                    absolute_disy.setText(String.format("absolute y=%04.2f", disy/10)+ "cm");
+                    if(stroke_detected&&!firststroke_flag)
+                    {
+                        //txt_out.setText("stroke detected now!");
+                        Log.i(TAG, "stroke distance="+disx/10+"cm");
+                        double input_dis=disx/10;
+                        double midbound=upper_section+(lower_section-upper_section)/2;
+                        if(input_dis<=midbound&&input_dis>upper_section){
+                            Log.i(TAG, "stroke upper section"+input_dis);
+                            txt_out.setText("stroke upper section");
+                        }
+                        else if(input_dis>=midbound&&input_dis<=lower_section){
+                            Log.i(TAG, "stroke lower section"+input_dis);
+                            txt_out.setText("stroke lower section");
+                        }
+                        else{
+                            txt_out.setText("not in section"+input_dis);
+                            Log.i(TAG, "not in section");
+                            Log.i(TAG, "stroke not in section");
+                        }
                     }
-                    else if(input_dis>=midbound&&input_dis<=lower_section){
-                        Log.i(TAG, "stroke lower section"+input_dis);
-                        txt_out.setText("stroke lower section");
-                    }
-                    else{
-                        txt_out.setText("not in section"+input_dis);
-                        Log.i(TAG, "not in section");
-                        Log.i(TAG, "stroke not in section");
-                    }
-                }
-                else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
-                {
-                    Log.i(TAG, "stroke distance="+disx/10+"cm");
-                    if(firststroke_cnt==0){
-                        upper_section=disx/10;
-                        txt_out.setText(String.format("upperbound=", upper_section) + "cm");
-                        Log.i(TAG, "stroke upperbound="+upper_section);
-                        firststroke_cnt++;
-                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+                    else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
+                    {
+                        Log.i(TAG, "stroke distance="+disx/10+"cm");
+                        if(firststroke_cnt==0){
+                            upper_section=disx/10;
+                            txt_out.setText(String.format("upperbound=", upper_section) + "cm");
+                            Log.i(TAG, "stroke upperbound="+upper_section);
+                            firststroke_cnt++;
+                            Log.i(TAG, "firststroke cnt="+firststroke_cnt);
 
-                    }
-                    else if(firststroke_cnt==1){
-                        lower_section=disx/10;
-                        txt_out.setText(String.format("lowerbound=", lower_section) + "cm");
-                        firststroke_flag=false;
-                        Log.i(TAG, "stroke lowerbound="+lower_section);
-                        firststroke_cnt++;
-                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+                        }
+                        else if(firststroke_cnt==1){
+                            lower_section=disx/10;
+                            txt_out.setText(String.format("lowerbound=", lower_section) + "cm");
+                            firststroke_flag=false;
+                            Log.i(TAG, "stroke lowerbound="+lower_section);
+                            firststroke_cnt++;
+                            Log.i(TAG, "firststroke cnt="+firststroke_cnt);
 
+                        }
                     }
-                }
-                else
-                {
-                    //txt_out.setText("no stroke!");
-                }
-                int tmp[][] = (int[][]) msg.obj;//1為x 2為y
-                canvas2.drawColor(Color.WHITE);
-                paint2.setStyle(Paint.Style.STROKE);
-                paint2.setStrokeWidth(5);
-                paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
-                //paint2.setAntiAlias(true);
-                //Log.i(TAG, "IN the section try");
-                //path.moveTo(100, 100);//原點
-                //int eventx=100;
-                //int eventy=100;
-                for (int i = 0; i < tracecount; i++) {
-                    if(drawcount==1){
-                        path.moveTo(tmp[i][1]+20,tmp[i][2]+20);
+                    else
+                    {
+                        //txt_out.setText("no stroke!");
+                    }
+                    int tmp[][] = (int[][]) msg.obj;//1為x 2為y
+                    canvas2.drawColor(Color.WHITE);
+                    paint2.setStyle(Paint.Style.STROKE);
+                    paint2.setStrokeWidth(5);
+                    paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
+                    //paint2.setAntiAlias(true);
+                    //Log.i(TAG, "IN the section try");
+                    //path.moveTo(100, 100);//原點
+                    //int eventx=100;
+                    //int eventy=100;
+                    for (int i = 0; i < tracecount; i++) {
+                        if(drawcount==1){
+                            path.moveTo(tmp[i][1]+20,tmp[i][2]+20);
+                            eventx=tmp[i][1]+20;
+                            eventy=tmp[i][2]+20;
+                            drawcount=0;
+                            continue;
+                        }
+                        int endx= (tmp[i][1]+20-eventx)/2+eventx;
+                        int endy= (tmp[i][2]+20-eventy)/2+eventy;
+                        path.quadTo(eventx,eventy,endx,endy);
                         eventx=tmp[i][1]+20;
                         eventy=tmp[i][2]+20;
-                        drawcount=0;
-                        continue;
+                        //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
+                        //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
+                        Log.i(TAG, "IN the section try" + "x= " + eventx + "y= " + eventy);
+                        //path.moveTo(eventx,eventy);
+
                     }
-                    int endx= (tmp[i][1]+20-eventx)/2+eventx;
-                    int endy= (tmp[i][2]+20-eventy)/2+eventy;
-                    path.quadTo(eventx,eventy,endx,endy);
-                    eventx=tmp[i][1]+20;
-                    eventy=tmp[i][2]+20;
-                    //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
-                    //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
-                    Log.i(TAG, "IN the section try" + "x= " + eventx + "y= " + eventy);
-                    //path.moveTo(eventx,eventy);
+                    canvas2.drawPath(path, paint2);
+                    path.moveTo(eventx,eventy);
+                    imageView.invalidate();
+
+                    twodimsioncount=0;/**/
 
                 }
-                canvas2.drawPath(path, paint2);
-                path.moveTo(eventx,eventy);
-                imageView.invalidate();
+                else
+                {texDistance_x.setText("Calibrating...");
+                    texDistance_y.setText("");
+                    absolute_disx.setText("");
+                    absolute_disy.setText("");
 
-                twodimsioncount=0;/**/
-
+                }
+                Log.i(TAG,"count" + tracecount);
+                tracecount=0;
             }
-            else
-            {texDistance_x.setText("Calibrating...");
-                texDistance_y.setText("");
-                absolute_disx.setText("");
-                absolute_disy.setText("");
-
+            boolean xydata = false;
+            if(xydata){
+                String text_x = texDistance_x.getText().toString();
+                String text_y = texDistance_y.getText().toString();
+                String abs_x = absolute_disx.getText().toString();
+                String abs_y = absolute_disy.getText().toString();
+                WriteStringFile(text_x,"test_x");
+                WriteStringFile(text_y,"text_y");
+                WriteStringFile(abs_x,"abs_x");
+                WriteStringFile(abs_y,"abs_y");
             }
-            Log.i(TAG,"count" + tracecount);
-            tracecount=0;
         }
-        boolean xydata = false;
-        if(xydata){
-            String text_x = texDistance_x.getText().toString();
-            String text_y = texDistance_y.getText().toString();
-            String abs_x = absolute_disx.getText().toString();
-            String abs_y = absolute_disy.getText().toString();
-            WriteStringFile(text_x,"test_x");
-            WriteStringFile(text_y,"text_y");
-            WriteStringFile(abs_x,"abs_x");
-            WriteStringFile(abs_y,"abs_y");
-        }
-    }
 
 
-};
+    };
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void WriteStringFile(String data, String filename) {
         String currentTime = LocalDateTime.now().toString();
@@ -1555,7 +1691,7 @@ private Handler updateviews =new Handler()
                     Log.i("BASEBAND", getbaseband(bsRecord, baseband, line / 2));//do cic
 
 //TODO OBSERVE BASEBAND(length=2048)
-                   // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
+                    // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
 
 
                     Log.i("REMOVEDC", removedc(baseband, baseband_nodc, dcvalue)+baseband_nodc.length);
