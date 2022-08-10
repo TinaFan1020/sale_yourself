@@ -114,6 +114,12 @@ public class MainActivity extends AppCompatActivity {
     int firststroke_cnt=0;
     double upper_section=0.0;
     double lower_section=0.0;
+    double left_section=0.0;
+    double right_section=0.0;
+    int[] left_up_section = new int[3];
+    int[] left_down_section = new int[3];
+    int[] right_up_section = new int[3];
+    int[] right_down_section = new int[3];
     SensorManager sensorManager;
     Sensor sensor;
     Sensor sensor_gravity;
@@ -162,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
 
     private int[] trace_x = new int[1000];
     private int[] trace_y = new int[1000];
-    private  int trace[][]=new int[1000][3];
+    private int trace[][]=new int[1000][3];
     private int tracecount = 0;
     private int twodimsioncount = 0;
     private int playBufSize = 0;
@@ -197,9 +203,10 @@ public class MainActivity extends AppCompatActivity {
     int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
     PerfectTune perfectTune = new PerfectTune();
     Path path = new Path();
-    int eventx=0;
-    int eventy=0;
     int drawcount=1;//確認是不是第一筆畫的，1是第一筆0不是
+    int prevx=0;
+    int prevy=0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -234,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
         btn_cal_sd.setOnClickListener(v -> cal_sd());
         //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
         bitmap = Bitmap.createBitmap((int) 4096, (int) 1400, Bitmap.Config.ARGB_8888);
-        bitmap2 = Bitmap.createBitmap((int) 100, (int) 100, Bitmap.Config.ARGB_8888);
+        bitmap2 = Bitmap.createBitmap((int) 75, (int) 75, Bitmap.Config.ARGB_8888);
         canvas2= new Canvas(bitmap2);
         canvas = new Canvas(bitmap);
         paint = new Paint();
@@ -325,9 +332,15 @@ public class MainActivity extends AppCompatActivity {
                 firststroke_flag=true;
                 upper_section=0.0;
                 lower_section=0.0;
+                left_section=0.0;
+                right_section=0.0;
                 firststart_flag=false;
                 Arrays.fill(trace_x,0);
                 Arrays.fill(trace_y,0);
+                Arrays.fill(left_down_section,0);
+                Arrays.fill(left_up_section,0);
+                Arrays.fill(right_down_section,0);
+                Arrays.fill(right_up_section,0);
                 canvas2.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
                 canvas2.drawColor(Color.WHITE);
                 path.reset();
@@ -872,7 +885,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if(stroke_state==0)
                 {
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0)
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -880,7 +893,7 @@ public class MainActivity extends AppCompatActivity {
                         triggered_flag=true;
                         shake_triggered=true;
                         retrigger_flag=1;
-                        // stabled_flag=false;
+                       // stabled_flag=false;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
                         Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
@@ -894,12 +907,12 @@ public class MainActivity extends AppCompatActivity {
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
                     {
                         stroke_detected=false;
-                        // Log.i(TAG,"fake stroke detected no shake!!");
+                       // Log.i(TAG,"fake stroke detected no shake!!");
                     }
                     else if(pos_avg_local<=stroke_power_min&&gravity_flag==true &&triggered_flag==false)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+                        //Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
 
                     }
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
@@ -1288,7 +1301,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return spectrum;
     }
-    //use it after fft
+//use it after fft
 //affect on fft data itself
 //會截斷某lower~upper的頻率範圍
     private double[] to_transform_cut_frequency(double[] toTransform ,int lower_bound,int upper_bound,int frequency,int fftsize) {
@@ -1501,128 +1514,252 @@ public class MainActivity extends AppCompatActivity {
     };
     Message msg = handlerMeasure.obtainMessage();
 
-    //llap zone
+//llap zone
+@SuppressLint("HandlerLeak")
+private Handler updateviews =new Handler()
+{
     @SuppressLint("HandlerLeak")
-    private Handler updateviews =new Handler()
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    public void handleMessage(Message msg)
     {
-        @SuppressLint("HandlerLeak")
-        @RequiresApi(api = Build.VERSION_CODES.O)
-        @Override
-        public void handleMessage(Message msg)
+        if(msg.what== 0)
         {
-            if(msg.what== 0)
-            {
-                if(isCalibrated) {
-                    texDistance_x.setText(String.format("x=%04.2f", dischangex / 10) + "cm");
-                    texDistance_y.setText(String.format("y=%04.2f", dischangey / 10) + "cm");
-                    absolute_disx.setText(String.format("absolute x=%04.2f", disx/10) + "cm");
-                    absolute_disy.setText(String.format("absolute y=%04.2f", disy/10)+ "cm");
-                    if(stroke_detected&&!firststroke_flag)
-                    {
-                        //txt_out.setText("stroke detected now!");
-                        Log.i(TAG, "stroke distance="+disx/10+"cm");
-                        double input_dis=disx/10;
-                        double midbound=upper_section+(lower_section-upper_section)/2;
-                        if(input_dis<=midbound&&input_dis>upper_section){
-                            Log.i(TAG, "stroke upper section"+input_dis);
-                            txt_out.setText("stroke upper section");
-                        }
-                        else if(input_dis>=midbound&&input_dis<=lower_section){
-                            Log.i(TAG, "stroke lower section"+input_dis);
-                            txt_out.setText("stroke lower section");
+            if(isCalibrated) {
+                texDistance_x.setText(String.format("x=%04.2f", dischangex / 10) + "cm");
+                texDistance_y.setText(String.format("y=%04.2f", dischangey / 10) + "cm");
+                absolute_disx.setText(String.format("absolute x=%04.2f", disx/10) + "cm");
+                absolute_disy.setText(String.format("absolute y=%04.2f", disy/10)+ "cm");
+
+                int tmp[][] = (int[][]) msg.obj;//1為x 2為y
+                //int tmp[][]={{4,1},{6,3},{8,2},{10,2},{10,1}};
+                //tracecount=5;
+                canvas2.drawColor(Color.WHITE);
+                //canvas.scale(0.5f, 0.5f);
+                paint2.setStyle(Paint.Style.STROKE);
+                paint2.setStrokeWidth(2);
+                paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
+                //paint2.setAntiAlias(true);
+                //Log.i(TAG, "IN the section try");
+                //path.moveTo(100, 100);//原點
+                //int eventx=100;
+                //int eventy=100;
+                for (int i = 0; i < twodimsioncount; i++) {
+                    if(drawcount==1){
+                        path.reset();
+                        path.moveTo((int)Math.round(tmp[i][1]*1),(int)Math.round(tmp[i][2]*1));
+                        drawcount=0;
+                    }
+                    if(i==0){
+                        path.moveTo((int)Math.round(tmp[i][1]*1),(int)Math.round(tmp[i][2]*1));
+                    }
+                    else {
+                        float midx = ((int)Math.round(tmp[i][1]*1) + prevx) / 2;
+                        float midy = ((int)Math.round(tmp[i][2]*1) + prevy) / 2;
+                        if(i==1){
+                            path.lineTo(midx,midy);
                         }
                         else{
-                            txt_out.setText("not in section"+input_dis);
-                            Log.i(TAG, "not in section");
-                            Log.i(TAG, "stroke not in section");
+                            path.quadTo(prevx, prevy, midx, midy);
                         }
                     }
-                    else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
-                    {
-                        Log.i(TAG, "stroke distance="+disx/10+"cm");
-                        if(firststroke_cnt==0){
-                            upper_section=disx/10;
-                            txt_out.setText(String.format("upperbound=", upper_section) + "cm");
-                            Log.i(TAG, "stroke upperbound="+upper_section);
-                            firststroke_cnt++;
-                            Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+                    prevx = (int)Math.round(tmp[i][1]*1.1);
+                    prevy = (int)Math.round(tmp[i][2]*1.1);
+                    //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
+                    //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
+                    Log.i(TAG, "IN the section try" + "x= " + (int)Math.round(tmp[i][1]*1.1) + "y= " + (int)Math.round(tmp[i][2]*1.1));
+                    //Log.i(TAG,"In the section COUNT="+twodimsioncount);
+                    //path.moveTo(eventx,eventy);
+                }
+                path.lineTo(prevx,prevy);
+                canvas2.drawPath(path, paint2);
+                //path.moveTo(prevx,prevy);
+                imageView.invalidate();
 
-                        }
-                        else if(firststroke_cnt==1){
-                            lower_section=disx/10;
-                            txt_out.setText(String.format("lowerbound=", lower_section) + "cm");
-                            firststroke_flag=false;
-                            Log.i(TAG, "stroke lowerbound="+lower_section);
-                            firststroke_cnt++;
-                            Log.i(TAG, "firststroke cnt="+firststroke_cnt);
 
-                        }
+                //敲擊實驗開始
+                /**/ //將手機橫放並在上方麥克風的左側進行實驗
+                //實驗一: 測試上下 請先敲擊上方(也就是離手機較近的那邊)
+                if(stroke_detected&&!firststroke_flag)//確認完邊界後
+                {
+                    //txt_out.setText("stroke detected now!");
+
+                    Log.i(TAG, "stroke point x=" + trace[1][1] + "y=" + trace[1][2]);
+                    double input_dis=trace[1][2];
+                    double midbound = upper_section + (lower_section - upper_section) / 2;
+                    if (input_dis <= midbound && input_dis > upper_section) {
+                        Log.i(TAG, "stroke upper section" + input_dis);
+                        txt_out.setText("stroke upper section");
+                    } else if (input_dis >= midbound && input_dis <= lower_section) {
+                        Log.i(TAG, "stroke lower section" + input_dis);
+                        txt_out.setText("stroke lower section");
+                    } else {
+                        txt_out.setText("not in section" + input_dis);
+                        Log.i(TAG, "not in section");
+                        Log.i(TAG, "stroke not in section");
                     }
-                    else
-                    {
-                        //txt_out.setText("no stroke!");
-                    }
-                    int tmp[][] = (int[][]) msg.obj;//1為x 2為y
-                    canvas2.drawColor(Color.WHITE);
-                    paint2.setStyle(Paint.Style.STROKE);
-                    paint2.setStrokeWidth(5);
-                    paint2.setColor(ContextCompat.getColor(getApplicationContext(), R.color.black));
-                    //paint2.setAntiAlias(true);
-                    //Log.i(TAG, "IN the section try");
-                    //path.moveTo(100, 100);//原點
-                    //int eventx=100;
-                    //int eventy=100;
-                    for (int i = 0; i < tracecount; i++) {
-                        if(drawcount==1){
-                            path.moveTo(tmp[i][1]+20,tmp[i][2]+20);
-                            eventx=tmp[i][1]+20;
-                            eventy=tmp[i][2]+20;
-                            drawcount=0;
-                            continue;
-                        }
-                        int endx= (tmp[i][1]+20-eventx)/2+eventx;
-                        int endy= (tmp[i][2]+20-eventy)/2+eventy;
-                        path.quadTo(eventx,eventy,endx,endy);
-                        eventx=tmp[i][1]+20;
-                        eventy=tmp[i][2]+20;
-                        //canvas.drawCircle(tmp7[i][1]*100,tmp7[i][2]*100,6,paint);//用畫多個圓的方式得到更好效能
-                        //canvas.drawLine(i, 500-(int)tmp3[i]/10, i-1,500- (int)tmp3[i-1]/10, paint);
-                        Log.i(TAG, "IN the section try" + "x= " + eventx + "y= " + eventy);
-                        //path.moveTo(eventx,eventy);
-
-                    }
-                    canvas2.drawPath(path, paint2);
-                    path.moveTo(eventx,eventy);
-                    imageView.invalidate();
-
-                    twodimsioncount=0;/**/
 
                 }
-                else
-                {texDistance_x.setText("Calibrating...");
-                    texDistance_y.setText("");
-                    absolute_disx.setText("");
-                    absolute_disy.setText("");
+                else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
+                {
+                    //Log.i(TAG, "stroke distance="+disx/10+"cm");
+                    if(firststroke_cnt<2){
+                        upper_section=trace[1][2];
+                        txt_out.setText(String.format("upperbound y =", upper_section) );
+                        Log.i(TAG, "stroke upperbound="+upper_section);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
+                    }
+                    else if(firststroke_cnt==1){
+                        lower_section=trace[1][2];
+                        txt_out.setText(String.format("lowerbound y=", lower_section) );
+                        firststroke_flag=false;
+                        Log.i(TAG, "stroke lowerbound="+lower_section);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
+                    }
+                }
+
+
+                /* 左右實驗 請先敲擊左邊(也就是離手機較遠的那邊)
+                //實驗二: 測試左右
+                if(stroke_detected&&!firststroke_flag)//確認完邊界後
+                {
+                    //txt_out.setText("stroke detected now!");
+
+                    Log.i(TAG, "stroke point x=" + trace[1][1] + "y=" + trace[1][2]);
+                    double input_dis=trace[1][1];
+                    double midbound = left_section + (right_section - left_section) / 2;
+                    if (input_dis <= midbound && input_dis > left_section) {
+                        Log.i(TAG, "stroke left section" + input_dis);
+                        Log.i(TAG, "Then stroke right" );
+                        //txt_out.setText("stroke upper section");
+                    } else if (input_dis >= midbound && input_dis <= right_section) {
+                        Log.i(TAG, "stroke right section" + input_dis);
+                        //txt_out.setText("stroke right section");
+                    } else {
+                        txt_out.setText("not in section" + input_dis);
+                        Log.i(TAG, "not in section");
+                        Log.i(TAG, "stroke not in section");
+                    }
 
                 }
-                Log.i(TAG,"count" + tracecount);
-                tracecount=0;
+                else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
+                {
+                    //Log.i(TAG, "stroke distance="+disx/10+"cm");
+                    if(firststroke_cnt<2){
+                        left_section=trace[1][1];
+                        txt_out.setText(String.format("left bound y =", left_section) );
+                        Log.i(TAG, "stroke left bound="+left_section);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
+                    }
+                    else if(firststroke_cnt==1){
+                        lower_section=trace[1][1];
+                        txt_out.setText(String.format("right bound y=", right_section) );
+                        firststroke_flag=false;
+                        Log.i(TAG, "stroke right bound="+right_section);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
+                    }
+                }
+                */
+
+                /*
+                //實驗三 :測試敲擊四個點形成一方型格子，看之後的敲擊是否在格子中，邊界順序為左上、左下、右上、右下(左邊為離手機較遠那側)
+                if(stroke_detected&&!firststroke_flag)//確認完邊界後
+                {
+                    //txt_out.setText("stroke detected now!");
+
+                    Log.i(TAG, "stroke point x=" + trace[1][1] + "y=" + trace[1][2]);
+                    int input_pointx = trace[1][1];
+                    int input_pointy = trace[1][2];
+                    if((input_pointx<left_up_section[1])||(input_pointx<left_down_section[1])||(input_pointx>right_up_section[1])||(input_pointx>right_down_section[1])){
+                        Log.i(TAG, "stroke x not in section");
+                    }
+                    else if((input_pointy<left_up_section[2])||(input_pointx>left_down_section[2])||(input_pointx<right_up_section[2])||(input_pointx>right_down_section[2])){
+                        Log.i(TAG, "stroke y not in section");
+                    }
+                    else{
+                        Log.i(TAG, "stroke in the section");
+                    }
+                }
+                else if(stroke_detected&&firststroke_flag&&firststroke_cnt<4)//一開始輸入上下界的case
+                {
+                    //Log.i(TAG, "stroke distance="+disx/10+"cm");
+                    if(firststroke_cnt==0){
+                        left_up_section[1]=trace[1][1];
+                        left_up_section[2]=trace[1][2];
+                        Log.i(TAG, "stroke left_up x="+ left_up_section[1] + " y= " + left_up_section[2]);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
+                    }
+                    else if(firststroke_cnt==1){
+                        left_down_section[1]=trace[1][1];
+                        left_down_section[2]=trace[1][2];
+                        firststroke_flag=false;
+                        Log.i(TAG, "stroke left_down x="+ left_down_section[1] + " y= " + left_down_section[2]);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
+                    }
+                    else if(firststroke_cnt==2){
+                        right_up_section[1]=trace[1][1];
+                        right_up_section[2]=trace[1][2];
+                        firststroke_flag=false;
+                        Log.i(TAG, "stroke right_up x="+ right_up_section[1] + " y= " + right_up_section[2]);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+
+                    }
+                    else if(firststroke_cnt==3){
+                        right_down_section[1]=trace[1][1];
+                        right_down_section[2]=trace[1][2];
+                        firststroke_flag=false;
+                        Log.i(TAG, "stroke right_up x="+ right_down_section[1] + " y= " + right_down_section[2]);
+                        firststroke_cnt++;
+                        Log.i(TAG, "firststroke cnt="+firststroke_cnt);
+                        firststroke_flag=false;
+                    }
+                }
+                */
+
+                //實驗結束
+
+                twodimsioncount=0;
+
             }
-            boolean xydata = false;
-            if(xydata){
-                String text_x = texDistance_x.getText().toString();
-                String text_y = texDistance_y.getText().toString();
-                String abs_x = absolute_disx.getText().toString();
-                String abs_y = absolute_disy.getText().toString();
-                WriteStringFile(text_x,"test_x");
-                WriteStringFile(text_y,"text_y");
-                WriteStringFile(abs_x,"abs_x");
-                WriteStringFile(abs_y,"abs_y");
+            else
+            {
+                texDistance_x.setText("Calibrating...");
+                texDistance_y.setText("");
+                absolute_disx.setText("");
+                absolute_disy.setText("");
+
             }
+            Log.i(TAG,"count" + tracecount);
+            tracecount=0;
         }
+        boolean xydata = false;
+        if(xydata){
+            String text_x = texDistance_x.getText().toString();
+            String text_y = texDistance_y.getText().toString();
+            String abs_x = absolute_disx.getText().toString();
+            String abs_y = absolute_disy.getText().toString();
+            WriteStringFile(text_x,"test_x");
+            WriteStringFile(text_y,"text_y");
+            WriteStringFile(abs_x,"abs_x");
+            WriteStringFile(abs_y,"abs_y");
+        }
+    }
 
 
-    };
+};
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void WriteStringFile(String data, String filename) {
         String currentTime = LocalDateTime.now().toString();
@@ -1663,6 +1800,9 @@ public class MainActivity extends AppCompatActivity {
             int curpos = 0;
             long starttime,endtime;
             String c_result;
+            int tmptracex[]=new int[100];
+            int tmptracey[]=new int[100];
+            int tmpcount=0;
 
 
 
@@ -1691,7 +1831,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("BASEBAND", getbaseband(bsRecord, baseband, line / 2));//do cic
 
 //TODO OBSERVE BASEBAND(length=2048)
-                    // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
+                   // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
 
 
                     Log.i("REMOVEDC", removedc(baseband, baseband_nodc, dcvalue)+baseband_nodc.length);
@@ -1840,31 +1980,32 @@ public class MainActivity extends AppCompatActivity {
                         }
                         stroke_flag=stroke_detected;
                         trace_x[tracecount]= (int) Math.round((disy*micdis1*micdis1-disx*micdis2*micdis2+disx*disy*(disy-disx))/2/(disx*micdis2+disy*micdis1));
-                        trace_y[tracecount]=(int) Math.round(Math.sqrt(  Math.abs((disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
+                        trace_y[tracecount]=(int) Math.round(Math.sqrt(Math.abs( (disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
                         //trace_x[tracecount]= (int) Math.round(disx);
-
-                        trace[tracecount][1]=trace_x[tracecount];
-                        trace[tracecount][2]=trace_y[tracecount];
+                        tmptracex[tmpcount]=trace_x[tracecount];
+                        tmptracey[tmpcount]=trace_y[tracecount];
+                        tmpcount++;
+                        if(tmpcount==5){
+                            int sumx=0;
+                            int sumy=0;
+                            for(int i=0;i<5;i++){
+                                sumx+=tmptracex[i];
+                                sumy+=tmptracey[i];
+                            }
+                            sumx/=5;
+                            sumy/=5;
+                            trace[twodimsioncount][1]=sumx;
+                            trace[twodimsioncount][2]=sumy;
+                            twodimsioncount++;
+                            tmpcount=0;
+                        }
+                        //trace[tracecount][1]=trace_x[tracecount];
+                        //trace[tracecount][2]=trace_y[tracecount];
                         //trace_y[tracecount]=(int) Math.round(disy);
                         Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
+                        //tracecount=5;
                         tracecount++;
-                        twodimsioncount++;
-
-
                     }
-                    //Log.i(TAG,"IN the section count="+twodimsioncount);
-                    /*if(twodimsioncount>20){
-                        Message msg = new Message();
-                        msg.what = 1;
-                        msg.obj = trace;
-                        handlerMeasure.sendMessage(msg);
-                        //updateviews.sendMessage(msg);
-                        twodimsioncount=0;
-                        //Log.i(TAG,"IN the section");
-                    }*/
-                    //else if(tracecount==10) tracecount=0;
-
-
 
                     if(Math.abs(displaydis-disx)>2||(tracecount>10)) {
                         Message msg = new Message();
