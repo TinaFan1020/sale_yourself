@@ -885,7 +885,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if(stroke_state==0)
                 {
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -1603,7 +1603,7 @@ private Handler updateviews =new Handler()
                 else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
                 {
                     //Log.i(TAG, "stroke distance="+disx/10+"cm");
-                    if(firststroke_cnt<2){
+                    if(firststroke_cnt==0){
                         upper_section=trace[1][2];
                         txt_out.setText(String.format("upperbound y =", upper_section) );
                         Log.i(TAG, "stroke upperbound="+upper_section);
@@ -1649,7 +1649,7 @@ private Handler updateviews =new Handler()
                 else if(stroke_detected&&firststroke_flag&&firststroke_cnt<2)//一開始輸入上下界的case
                 {
                     //Log.i(TAG, "stroke distance="+disx/10+"cm");
-                    if(firststroke_cnt<2){
+                    if(firststroke_cnt==0){
                         left_section=trace[1][1];
                         txt_out.setText(String.format("left bound y =", left_section) );
                         Log.i(TAG, "stroke left bound="+left_section);
