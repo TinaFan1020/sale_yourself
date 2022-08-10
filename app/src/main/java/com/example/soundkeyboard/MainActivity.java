@@ -1589,12 +1589,12 @@ private Handler updateviews =new Handler()
                     double midbound = upper_section + (lower_section - upper_section) / 2;
                     if (input_dis <= midbound && input_dis > upper_section) {
                         Log.i(TAG, "stroke upper section" + input_dis);
-                        txt_out.setText("stroke upper section");
+                        //txt_out.setText("stroke upper section");
                     } else if (input_dis >= midbound && input_dis <= lower_section) {
                         Log.i(TAG, "stroke lower section" + input_dis);
-                        txt_out.setText("stroke lower section");
+                        //txt_out.setText("stroke lower section");
                     } else {
-                        txt_out.setText("not in section" + input_dis);
+                        //txt_out.setText("not in section" + input_dis);
                         Log.i(TAG, "not in section");
                         Log.i(TAG, "stroke not in section");
                     }
@@ -1605,7 +1605,7 @@ private Handler updateviews =new Handler()
                     //Log.i(TAG, "stroke distance="+disx/10+"cm");
                     if(firststroke_cnt==0){
                         upper_section=trace[1][2];
-                        txt_out.setText(String.format("upperbound y =", upper_section) );
+                        //txt_out.setText(String.format("upperbound y =", upper_section) );
                         Log.i(TAG, "stroke upperbound="+upper_section);
                         firststroke_cnt++;
                         Log.i(TAG, "firststroke cnt="+firststroke_cnt);
@@ -1640,7 +1640,7 @@ private Handler updateviews =new Handler()
                         Log.i(TAG, "stroke right section" + input_dis);
                         //txt_out.setText("stroke right section");
                     } else {
-                        txt_out.setText("not in section" + input_dis);
+                        //txt_out.setText("not in section" + input_dis);
                         Log.i(TAG, "not in section");
                         Log.i(TAG, "stroke not in section");
                     }
@@ -1651,7 +1651,7 @@ private Handler updateviews =new Handler()
                     //Log.i(TAG, "stroke distance="+disx/10+"cm");
                     if(firststroke_cnt==0){
                         left_section=trace[1][1];
-                        txt_out.setText(String.format("left bound y =", left_section) );
+                        //txt_out.setText(String.format("left bound y =", left_section) );
                         Log.i(TAG, "stroke left bound="+left_section);
                         firststroke_cnt++;
                         Log.i(TAG, "firststroke cnt="+firststroke_cnt);
@@ -1659,7 +1659,7 @@ private Handler updateviews =new Handler()
                     }
                     else if(firststroke_cnt==1){
                         lower_section=trace[1][1];
-                        txt_out.setText(String.format("right bound y=", right_section) );
+                        //txt_out.setText(String.format("right bound y=", right_section) );
                         firststroke_flag=false;
                         Log.i(TAG, "stroke right bound="+right_section);
                         firststroke_cnt++;
@@ -2017,12 +2017,12 @@ private Handler updateviews =new Handler()
                             double midbound = upper_section + (lower_section - upper_section) / 2;
                             if (input_dis <= midbound && input_dis > upper_section) {
                                 Log.i(TAG, "stroke upper section" + input_dis);
-                                txt_out.setText("stroke upper section");
+                                //txt_out.setText("stroke upper section");
                             } else if (input_dis >= midbound && input_dis <= lower_section) {
                                 Log.i(TAG, "stroke lower section" + input_dis);
-                                txt_out.setText("stroke lower section");
+                                //txt_out.setText("stroke lower section");
                             } else {
-                                txt_out.setText("not in section" + input_dis);
+                                //txt_out.setText("not in section" + input_dis);
                                 Log.i(TAG, "not in section");
                                 Log.i(TAG, "stroke not in section");
                             }
@@ -2033,7 +2033,7 @@ private Handler updateviews =new Handler()
                             //Log.i(TAG, "stroke distance="+disx/10+"cm");
                             if(firststroke_cnt==0){
                                 upper_section=trace[1][2];
-                                txt_out.setText(String.format("upperbound y =", upper_section) );
+                                //txt_out.setText(String.format("upperbound y =", upper_section) );
                                 Log.i(TAG, "stroke upperbound="+upper_section);
                                 firststroke_cnt++;
                                 Log.i(TAG, "firststroke cnt="+firststroke_cnt);
@@ -2041,7 +2041,7 @@ private Handler updateviews =new Handler()
                             }
                             else if(firststroke_cnt==1){
                                 lower_section=trace[1][2];
-                                txt_out.setText(String.format("lowerbound y=", lower_section) );
+                                //txt_out.setText(String.format("lowerbound y=", lower_section) );
                                 firststroke_flag=false;
                                 Log.i(TAG, "stroke lowerbound="+lower_section);
                                 firststroke_cnt++;
@@ -2066,7 +2066,7 @@ private Handler updateviews =new Handler()
                             Log.i(TAG, "stroke right section" + input_dis);
                             //txt_out.setText("stroke right section");
                         } else {
-                            txt_out.setText("not in section" + input_dis);
+                            //txt_out.setText("not in section" + input_dis);
                             Log.i(TAG, "not in section");
                             Log.i(TAG, "stroke not in section");
                         }
@@ -2077,7 +2077,7 @@ private Handler updateviews =new Handler()
                         //Log.i(TAG, "stroke distance="+disx/10+"cm");
                         if(firststroke_cnt==0){
                             left_section=trace[1][1];
-                            txt_out.setText(String.format("left bound y =", left_section) );
+                            //txt_out.setText(String.format("left bound y =", left_section) );
                             Log.i(TAG, "stroke left bound="+left_section);
                             firststroke_cnt++;
                             Log.i(TAG, "firststroke cnt="+firststroke_cnt);
@@ -2085,7 +2085,7 @@ private Handler updateviews =new Handler()
                         }
                         else if(firststroke_cnt==1){
                             lower_section=trace[1][1];
-                            txt_out.setText(String.format("right bound y=", right_section) );
+                            //txt_out.setText(String.format("right bound y=", right_section) );
                             firststroke_flag=false;
                             Log.i(TAG, "stroke right bound="+right_section);
                             firststroke_cnt++;
@@ -2144,7 +2144,6 @@ private Handler updateviews =new Handler()
                         else if(firststroke_cnt==3){
                             right_down_section[1]=trace[1][1];
                             right_down_section[2]=trace[1][2];
-                            firststroke_flag=false;
                             Log.i(TAG, "stroke right_up x="+ right_down_section[1] + " y= " + right_down_section[2]);
                             firststroke_cnt++;
                             Log.i(TAG, "firststroke cnt="+firststroke_cnt);
