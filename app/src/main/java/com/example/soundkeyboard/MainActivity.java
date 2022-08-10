@@ -2128,7 +2128,6 @@ private Handler updateviews =new Handler()
                         else if(firststroke_cnt==1){
                             left_down_section[1]=trace[1][1];
                             left_down_section[2]=trace[1][2];
-                            firststroke_flag=false;
                             Log.i(TAG, "stroke left_down x="+ left_down_section[1] + " y= " + left_down_section[2]);
                             firststroke_cnt++;
                             Log.i(TAG, "firststroke cnt="+firststroke_cnt);
@@ -2137,7 +2136,6 @@ private Handler updateviews =new Handler()
                         else if(firststroke_cnt==2){
                             right_up_section[1]=trace[1][1];
                             right_up_section[2]=trace[1][2];
-                            firststroke_flag=false;
                             Log.i(TAG, "stroke right_up x="+ right_up_section[1] + " y= " + right_up_section[2]);
                             firststroke_cnt++;
                             Log.i(TAG, "firststroke cnt="+firststroke_cnt);
