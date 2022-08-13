@@ -551,6 +551,22 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    short[][] spiltChannel(short [] samples, int numChannels)
+    {
+
+        int numFrames  = samples.length / numChannels;
+
+        short[][] result = new short[numChannels][];
+        for (int ch = 0 ; ch < numChannels ; ch++)
+        {
+            result[ch] = new short[numFrames];
+            for (int i = 0 ; i < numFrames ; i++)
+            {
+                result[ch][i] = samples[numChannels*i+ch];
+            }
+        }
+        return result;
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void StartAudioRecord() {//錄音的函式 還有處理資料也在這裡
@@ -573,7 +589,7 @@ public class MainActivity extends AppCompatActivity {
 //採集率
         int frequency = 48000;
 //格式
-        int channelConfiguration = AudioFormat.CHANNEL_IN_MONO;
+        int channelConfiguration = AudioFormat.CHANNEL_IN_STEREO;
 //16Bit
         int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
 //生成PCM檔案
@@ -621,8 +637,10 @@ public class MainActivity extends AppCompatActivity {
             OutputStream os_org = new FileOutputStream(file_org);
             BufferedOutputStream bos_org = new BufferedOutputStream(os_org);
             DataOutputStream dos_org = new DataOutputStream(bos_org);
-            //int bufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);//這會得到最小所需buffersize 但要用2的次方大小
+            int NOTbufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);//這會得到最小所需buffersize 但要用2的次方大小
+            Log.i(TAG, "recbuffersize:" + NOTbufferSize);
             int bufferSize=4096;// set as power of 2 for fft 這是每個迴圈取的資料點 每個迴圈約等於0.09秒
+            int bufferSize2channel=4096*2;//for 2 channel
             int fftSize=bufferSize*2;//丟進去做fft的大小 是buffer的兩倍 為了讓fft中的運作與buffer對齊
             transformer = new RealDoubleFFT(bufferSize*2);//!
 
@@ -637,8 +655,10 @@ public class MainActivity extends AppCompatActivity {
                 checkPermission();
             }
 
-            AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize);
+            AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize2channel);
             short[] buffer = new short[bufferSize];//用來儲存原始音訊資料
+            short[] buffer2channel = new short[bufferSize2channel];
+            short[][] buffer_spilt;
             toTransform = new double[bufferSize*2];//用來儲存要放進fft的資料
             //to calculate data after fft
             double[] re;
@@ -654,8 +674,11 @@ public class MainActivity extends AppCompatActivity {
             while (isRecording) {
                 int audio_total=0;
                 looptimes++;
-                int bufferReadResult = audioRecord.read(buffer, 0, bufferSize);
+                int bufferReadResult = audioRecord.read(buffer2channel, 0, bufferSize2channel);
+                buffer_spilt=spiltChannel(buffer2channel,2);
+                System.arraycopy(buffer_spilt[0],0,buffer,0,buffer_spilt[0].length);
 
+               // Log.i(TAG, "READRESULT="+bufferReadResult);
                 ////////////////////////////
                 //此處都是關於按鍵聲偵測的變數 此處的變數都只用在一次迴圈中資料的統計 而不是從程式開始執行到現在的統計
 
@@ -680,7 +703,7 @@ public class MainActivity extends AppCompatActivity {
                     toTransform[i]=0;
                 }
                 //read data from mic and predict strokes
-                for (int i = 0; i < bufferReadResult; i++  ) {
+                for (int i = 0; i < bufferSize; i++  ) {
                     //double db = 20 * (Math.log10(Math.abs(buffer[i])));
                     /* //this original stroke detect
                     lastpos=ispos;
@@ -1192,16 +1215,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void onclick_audio_play()
     {
-        if(file == null){
+        if(file_org == null){
             Log.i(TAG,"Null file");
             return;
         }
 //讀取檔案
-        int musicLength = (int) (file.length() / 2);//過長的檔案可能會導致出錯
+        int musicLength = (int) (file_org.length() / 2);//過長的檔案可能會導致出錯
         Log.i(TAG,"music len="+musicLength);
         short[] music = new short[musicLength];
         try {
-            InputStream is = new FileInputStream(file);
+            InputStream is = new FileInputStream(file_org);
             BufferedInputStream bis = new BufferedInputStream(is);
             DataInputStream dis = new DataInputStream(bis);
             int i = 0;
