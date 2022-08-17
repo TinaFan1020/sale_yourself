@@ -190,15 +190,15 @@ public class MainActivity extends AppCompatActivity {
     //llap zone
 
     int cnt = 0;
-    double[] toTransform;//用來放要拿去fftㄉdata
+    double[] toTransform,toTransform_2ch;//用來放要拿去fftㄉdata
     double most_freq = 0.0;//fft出來最大ㄉ頻率
     //////
     int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
     int stroke_power_max = 180;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
-    int stroke_power_min = 20;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
+    int stroke_power_min = 30;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
-    File file,file_org;
+    File file,file_org,file_org_2ch,file_2ch;
     int dowindow=1;//用來開關window func 1是開 0是關
     int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
     PerfectTune perfectTune = new PerfectTune();
@@ -595,7 +595,9 @@ public class MainActivity extends AppCompatActivity {
         int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
 //生成PCM檔案
         file = new File( getExternalCacheDir().getAbsolutePath()+"/audio_fft.pcm");
+        file_2ch=new File( getExternalCacheDir().getAbsolutePath()+"/audio_fft_2ch.pcm");
         file_org = new File( getExternalCacheDir().getAbsolutePath()+"/audio_org.pcm");
+        file_org_2ch=new File( getExternalCacheDir().getAbsolutePath()+"/audio_org_2ch.pcm");
 
         Log.i(TAG, "生成檔案"+file.getAbsolutePath());
 //如果存在，就先刪除再建立
@@ -635,9 +637,15 @@ public class MainActivity extends AppCompatActivity {
             OutputStream os = new FileOutputStream(file);
             BufferedOutputStream bos = new BufferedOutputStream(os);
             DataOutputStream dos = new DataOutputStream(bos);
+            OutputStream os_2ch = new FileOutputStream(file_2ch);
+            BufferedOutputStream bos_2ch = new BufferedOutputStream(os_2ch);
+            DataOutputStream dos_2ch = new DataOutputStream(bos_2ch);
             OutputStream os_org = new FileOutputStream(file_org);
             BufferedOutputStream bos_org = new BufferedOutputStream(os_org);
             DataOutputStream dos_org = new DataOutputStream(bos_org);
+            OutputStream os_org_2ch = new FileOutputStream(file_org_2ch);
+            BufferedOutputStream bos_org_2ch = new BufferedOutputStream(os_org_2ch);
+            DataOutputStream dos_org_2ch = new DataOutputStream(bos_org_2ch);
             int NOTbufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);//這會得到最小所需buffersize 但要用2的次方大小
             Log.i(TAG, "recbuffersize:" + NOTbufferSize);
             int bufferSize=4096;// set as power of 2 for fft 這是每個迴圈取的資料點 每個迴圈約等於0.09秒
@@ -658,9 +666,11 @@ public class MainActivity extends AppCompatActivity {
 
             AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, frequency, channelConfiguration, audioEncoding, bufferSize2channel);
             short[] buffer = new short[bufferSize];//用來儲存原始音訊資料
+            short[] buffer_second = new short[bufferSize];
             short[] buffer2channel = new short[bufferSize2channel];
             short[][] buffer_spilt;
-            toTransform = new double[bufferSize*2];//用來儲存要放進fft的資料
+            toTransform = new double[bufferSize*2];
+            toTransform_2ch = new double[bufferSize*2];//用來儲存要放進fft的資料
             //to calculate data after fft
             double[] re;
             double[] im;
@@ -678,7 +688,7 @@ public class MainActivity extends AppCompatActivity {
                 int bufferReadResult = audioRecord.read(buffer2channel, 0, bufferSize2channel);
                 buffer_spilt=spiltChannel(buffer2channel,2);
                 System.arraycopy(buffer_spilt[0],0,buffer,0,buffer_spilt[0].length);
-
+                System.arraycopy(buffer_spilt[1],0,buffer_second,0,buffer_spilt[1].length);
                // Log.i(TAG, "READRESULT="+bufferReadResult);
                 ////////////////////////////
                 //此處都是關於按鍵聲偵測的變數 此處的變數都只用在一次迴圈中資料的統計 而不是從程式開始執行到現在的統計
@@ -702,6 +712,7 @@ public class MainActivity extends AppCompatActivity {
                 for(int i=0;i<bufferSize*2;i++)
                 {
                     toTransform[i]=0;
+                    toTransform_2ch[i]=0;
                 }
                 //read data from mic and predict strokes
                 for (int i = 0; i < bufferSize; i++  ) {
@@ -728,6 +739,7 @@ public class MainActivity extends AppCompatActivity {
                     put data into fft array
                      */
                     toTransform[i] = (double) buffer[i] / 32768.0;
+                    toTransform_2ch[i] = (double) buffer_second[i] / 32768.0;
                     //put data into complex array
                     complexBuffer[i].real=buffer[i];
                     complexBuffer[i].imaginary=0;
@@ -738,6 +750,10 @@ public class MainActivity extends AppCompatActivity {
                     dos_org.writeShort(buffer[i]);
 
                 };
+                for(int i=0;i<bufferSize2channel;i++)
+                {
+                    dos_org_2ch.writeShort(buffer2channel[i]);
+                }
                 /*
                 pos_avg_local=(double)pos_total_local/(double)pos_cnt_local;
                 pos_avg_global=(double)pos_total_global/(double)pos_cnt_global;
@@ -751,11 +767,13 @@ public class MainActivity extends AppCompatActivity {
                     double window[] = new double[bufferSize * 2];
                     window = hanning(bufferSize * 2);//產生適當的window
                     toTransform = applyWindowFunc(toTransform, window);
+                    toTransform_2ch = applyWindowFunc(toTransform_2ch, window);
                 }
                 /*
                 do fft
                  */
                 transformer.ft(toTransform);
+                transformer.ft(toTransform_2ch);
 
                 //do hilbert transform
                 HilbertTransform.FHT(complexBuffer, FourierTransform.Direction.Forward);
@@ -778,7 +796,7 @@ public class MainActivity extends AppCompatActivity {
                 int lower=800;
                 int upper=23800;
                 toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
-
+                toTransform_2ch=to_transform_cut_frequency(toTransform_2ch,lower,upper,frequency,fftSize);
                 /*
 
                  */
@@ -831,6 +849,7 @@ public class MainActivity extends AppCompatActivity {
 
                 //do inverse fft
                 transformer.bt(toTransform);
+                transformer.bt(toTransform_2ch);
 
                 int tmp_stat=0;
 
@@ -841,7 +860,10 @@ public class MainActivity extends AppCompatActivity {
                 for(int i=0;i<bufferSize;i++)
                 {
                     short tmp=(short)Math.round(toTransform[i]);
+                    short tmp_2ch=(short)Math.round(toTransform_2ch[i]);
                     dos.writeShort(tmp);
+                    dos_2ch.writeShort(tmp);
+                    dos_2ch.writeShort(tmp_2ch);
                 }
                 // detect stroke from inverse fft data
                 for(int i=0;i<bufferSize;i++)
@@ -1022,11 +1044,23 @@ public class MainActivity extends AppCompatActivity {
                 File des = new File(getExternalCacheDir()+currentTime+file.getName());
                 copyFileUsingStream(file,des);
             }
+            boolean train_fft_2ch = true;
+            if(train_fft_2ch){
+
+                File des = new File(getExternalCacheDir()+currentTime+file_2ch.getName());
+                copyFileUsingStream(file_2ch,des);
+            }
             boolean train_unfft = true;
             if(train_unfft){
 
                 File des = new File(getExternalCacheDir()+currentTime+file_org.getName());
                 copyFileUsingStream(file_org,des);
+            }
+            boolean train_unfft_2ch = true;
+            if(train_unfft_2ch){
+
+                File des = new File(getExternalCacheDir()+currentTime+file_org_2ch.getName());
+                copyFileUsingStream(file_org_2ch,des);
             }
             boolean train_fft_towav_v1 = false;
             if(train_fft_towav_v1)
@@ -1062,8 +1096,17 @@ public class MainActivity extends AppCompatActivity {
                 File souce = new File(outpath);
                 File des = new File(getExternalCacheDir()+currentTime+"audio_fft.wav");
                 copyFileUsingStream(souce,des);
-
-
+            }
+            boolean train_fft_towav_v2_2ch = true;
+            if(train_fft_towav_v2_2ch)
+            {
+                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
+                String path=getExternalCacheDir()+"/"+file_2ch.getName();
+                String outpath = path.replace(".pcm", ".wav");
+                pcmToWavUtil.pcmToWav(path, outpath);
+                File souce = new File(outpath);
+                File des = new File(getExternalCacheDir()+currentTime+"audio_fft_2ch.wav");
+                copyFileUsingStream(souce,des);
             }
             boolean train_unfft_towav_v2 = true;
             if(train_unfft_towav_v2)
@@ -1078,9 +1121,24 @@ public class MainActivity extends AppCompatActivity {
 
 
             }
+            boolean train_unfft_towav_v2_2ch = true;
+            if(train_unfft_towav_v2_2ch)
+            {
+                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
+                String path=getExternalCacheDir()+"/"+file_org_2ch.getName();
+                String outpath = path.replace(".pcm", ".wav");
+                pcmToWavUtil.pcmToWav(path, outpath);
+                File souce = new File(outpath);
+                File des = new File(getExternalCacheDir()+currentTime+"audio_org_2ch.wav");
+                copyFileUsingStream(souce,des);
+
+
+            }
 
             dos.close();
+            dos_2ch.close();
             dos_org.close();
+            dos_org_2ch.close();
         } catch (Throwable t) {
             Log.e(TAG, "錄音失敗"+t);
             t.printStackTrace();
@@ -1880,6 +1938,7 @@ private Handler updateviews =new Handler()
 
                         //敲擊實驗開始
                         /**/ //將手機橫放並在上方麥克風的左側進行實驗
+
                         //實驗一: 測試上下 請先敲擊上方(也就是離手機較近的那邊)
                         current_time=System.currentTimeMillis();
                         if(current_time-last_time>500) {
@@ -1928,7 +1987,9 @@ private Handler updateviews =new Handler()
                             }
                         }
 
-                        /* 左右實驗 請先敲擊左邊(也就是離手機較遠的那邊)
+
+                         /*
+                        //左右實驗 請先敲擊左邊(也就是離手機較遠的那邊)
                     //實驗二: 測試左右
                     current_time=System.currentTimeMillis();
                     if(current_time-last_time>500) {
@@ -1979,7 +2040,7 @@ private Handler updateviews =new Handler()
                     }
                     */
 
-                    /*
+/*
                     //實驗三 :測試敲擊四個點形成一方型格子，看之後的敲擊是否在格子中，邊界順序為左上、左下、右上、右下(左邊為離手機較遠那側)
                     current_time=System.currentTimeMillis();
                     if(current_time-last_time>500) {
