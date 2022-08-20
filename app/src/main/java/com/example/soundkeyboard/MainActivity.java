@@ -127,6 +127,9 @@ public class MainActivity extends AppCompatActivity {
     //llap zone
 
 
+
+
+
     private int frameSize = 512;
     int recBufSize = 0;
     double temperature = 20;
@@ -1744,11 +1747,21 @@ private Handler updateviews =new Handler()
             /*
              *
              */
-            long lasttime=0,nowtime=0;
+            long lasttime=0,nowtime=0,stroke_detect_time=0,mystarttime=0,endttime=0;
+            int loop_cnt=0;
+            double stroke_dc_tot=0.0;
+            double stroke_ndc_tot=0.0;
+            int llap_stroke_flag=0;//0 for no 1 for yes
+            int precatch_size=1000;//var to change the amount of precatched data
+            double recent_dc_tot[]=new double[precatch_size];
+            double recent_ndc_tot[]=new double[precatch_size];
+            int recent_tot_ptr=0;
             while (blnPlayRecord) {
                 /*
                  *
                  */
+                if(mystarttime==0) mystarttime=System.currentTimeMillis();
+
                 int line = llap_audioRecord.read(bsRecord, 0, frameSize * 2);
                 datacount = datacount + line / 2;
                 now=now+1;
@@ -1765,9 +1778,59 @@ private Handler updateviews =new Handler()
 //TODO OBSERVE BASEBAND(length=2048)
                    // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
 
-
+                    Double basebandtotal=0.0;
+                    Double ndctotal=0.0;
                     Log.i("REMOVEDC", removedc(baseband, baseband_nodc, dcvalue)+baseband_nodc.length);
                     nowtime=System.currentTimeMillis();
+                    for(int i=0;i<baseband.length;i++)
+                    {
+                        basebandtotal+=baseband[i];
+                        ndctotal+=baseband_nodc[i];
+                    }
+
+
+                    recent_dc_tot[recent_tot_ptr]=basebandtotal;
+                    recent_ndc_tot[recent_tot_ptr]=ndctotal;
+                    recent_tot_ptr++;
+                    recent_tot_ptr%=precatch_size;
+
+                    if(llap_stroke_flag==0&&stroke_detected==true)
+                    {
+                        llap_stroke_flag=1;
+                        nowtime=System.currentTimeMillis();
+                        stroke_detect_time=System.currentTimeMillis();
+                        stroke_dc_tot=0.0;
+                        stroke_ndc_tot=0.0;
+                        //Log.i("debug","here!! stroke_dc_tot=" +stroke_dc_tot);
+                        for(int i=0;i<precatch_size;i++)
+                        {
+                            stroke_dc_tot+=recent_dc_tot[i]/10;
+                            stroke_ndc_tot+=recent_ndc_tot[i]/10;
+                        }
+                        loop_cnt=precatch_size;
+                        //stroke_dc_tot+=basebandtotal/10;
+                        //stroke_ndc_tot+=ndctotal/10;
+                    }
+                    else if(llap_stroke_flag==1&&nowtime-stroke_detect_time<350)
+                    {
+                        stroke_dc_tot+=basebandtotal/10;
+                        stroke_ndc_tot+=ndctotal/10;
+                        loop_cnt++;
+                    }
+                    else if(llap_stroke_flag==1&&nowtime-stroke_detect_time>=350)
+                    {
+
+                        llap_stroke_flag=0;
+                        Log.i("stroke_dc_tot= ",""+stroke_dc_tot+"    avg=v"+stroke_dc_tot/loop_cnt);//end of calculation
+                        Log.i("stroke_ndc_tot= ",""+stroke_ndc_tot+"    avg= "+stroke_ndc_tot/loop_cnt);
+                    }
+                    else
+                    {
+                        //Log.i("????","check if anything wrong");
+                    }
+
+                    //Log.i(TAG,"basebandtot= "+basebandtotal +"baseavg= "+basebandtotal/baseband.length);
+                    //Log.i(TAG,"ndctot= "+basebandtotal +"ndcavg= "+basebandtotal/baseband.length);
                     if(dodraw==6&&nowtime-lasttime>200)
                     {
                         Message msg = handlerMeasure.obtainMessage();
@@ -2127,6 +2190,8 @@ private Handler updateviews =new Handler()
                 //Log.i(TAG,"endtime" + System.currentTimeMillis());
 
             }
+            endttime=System.currentTimeMillis();
+            Log.i("time","used time="+(endttime-mystarttime)+"loops=" +loop_cnt+"avg="+(endttime-mystarttime)/loop_cnt);
             llap_audioRecord.stop();
 
         }
