@@ -2191,7 +2191,8 @@ private Handler updateviews =new Handler()
 
             }
             endttime=System.currentTimeMillis();
-            Log.i("time","used time="+(endttime-mystarttime)+"loops=" +loop_cnt+"avg="+(endttime-mystarttime)/loop_cnt);
+           if(loop_cnt!=0) Log.i("time","used time="+(endttime-mystarttime)+"loops=" +loop_cnt+"avg="+(endttime-mystarttime)/(loop_cnt));
+           if(loop_cnt==0) Log.i("time","used time="+(endttime-mystarttime)+"loops=" +loop_cnt);
             llap_audioRecord.stop();
 
         }
