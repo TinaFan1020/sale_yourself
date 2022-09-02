@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.FileWriter;
 import java.util.Arrays;
 import java.util.LinkedList;
 import android.Manifest;
@@ -112,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
     boolean firststart_flag=false;//看是否為剛開啟llap按鍵
     boolean firststroke_flag=true;//輸入一維距離實驗上下格的範圍
     int firststroke_cnt=0;
+    int stroke_cnt=0;
     double upper_section=0.0;
     double lower_section=0.0;
     double left_section=0.0;
@@ -201,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
     int stroke_power_min = 30;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
-    File file,file_org,file_org_2ch,file_2ch;
+    File file,file_org,file_org_2ch,file_2ch,file_baseband_txt;
     int dowindow=1;//用來開關window func 1是開 0是關
     int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
     PerfectTune perfectTune = new PerfectTune();
@@ -583,7 +585,7 @@ public class MainActivity extends AppCompatActivity {
         double neg_avg_global=0;
         int pos_total_global=0;
         int pos_cnt_global=0;
-        int stroke_cnt=0;
+        stroke_cnt=0;
         int stroke_state=0;
         ////////////////////////////
         //for fft
@@ -601,6 +603,7 @@ public class MainActivity extends AppCompatActivity {
         file_2ch=new File( getExternalCacheDir().getAbsolutePath()+"/audio_fft_2ch.pcm");
         file_org = new File( getExternalCacheDir().getAbsolutePath()+"/audio_org.pcm");
         file_org_2ch=new File( getExternalCacheDir().getAbsolutePath()+"/audio_org_2ch.pcm");
+        
 
         Log.i(TAG, "生成檔案"+file.getAbsolutePath());
 //如果存在，就先刪除再建立
@@ -649,6 +652,9 @@ public class MainActivity extends AppCompatActivity {
             OutputStream os_org_2ch = new FileOutputStream(file_org_2ch);
             BufferedOutputStream bos_org_2ch = new BufferedOutputStream(os_org_2ch);
             DataOutputStream dos_org_2ch = new DataOutputStream(bos_org_2ch);
+
+            
+
             int NOTbufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);//這會得到最小所需buffersize 但要用2的次方大小
             Log.i(TAG, "recbuffersize:" + NOTbufferSize);
             int bufferSize=4096;// set as power of 2 for fft 這是每個迴圈取的資料點 每個迴圈約等於0.09秒
@@ -1041,25 +1047,25 @@ public class MainActivity extends AppCompatActivity {
             }
             audioRecord.stop();
             String currentTime = LocalDateTime.now().toString();
-            boolean train_fft = true;
+            boolean train_fft = false;
             if(train_fft){
 
                 File des = new File(getExternalCacheDir()+currentTime+file.getName());
                 copyFileUsingStream(file,des);
             }
-            boolean train_fft_2ch = true;
+            boolean train_fft_2ch = false;
             if(train_fft_2ch){
 
                 File des = new File(getExternalCacheDir()+currentTime+file_2ch.getName());
                 copyFileUsingStream(file_2ch,des);
             }
-            boolean train_unfft = true;
+            boolean train_unfft = false;
             if(train_unfft){
 
                 File des = new File(getExternalCacheDir()+currentTime+file_org.getName());
                 copyFileUsingStream(file_org,des);
             }
-            boolean train_unfft_2ch = true;
+            boolean train_unfft_2ch = false;
             if(train_unfft_2ch){
 
                 File des = new File(getExternalCacheDir()+currentTime+file_org_2ch.getName());
@@ -1142,6 +1148,7 @@ public class MainActivity extends AppCompatActivity {
             dos_2ch.close();
             dos_org.close();
             dos_org_2ch.close();
+            
         } catch (Throwable t) {
             Log.e(TAG, "錄音失敗"+t);
             t.printStackTrace();
@@ -1726,6 +1733,7 @@ private Handler updateviews =new Handler()
         //private short [] bsRecord = new short[recBufSize];
         //
 
+        @RequiresApi(api = Build.VERSION_CODES.O)
         @Override
         public void run() {
             short[] bsRecord = new short[recBufSize * 2];
@@ -1739,6 +1747,14 @@ private Handler updateviews =new Handler()
             int tmpcount=0;
             long current_time=-1;
             long last_time=-1;
+            FileWriter fwriter = null;
+            
+            try {//try to create txt
+                file_baseband_txt=new File(getExternalCacheDir().getAbsolutePath()+"/baseband_data.txt");
+                fwriter=new FileWriter(file_baseband_txt,false);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
 
             while (blnPlayRecord == false) {
@@ -1823,6 +1839,14 @@ private Handler updateviews =new Handler()
                         llap_stroke_flag=0;
                         Log.i("stroke_dc_tot= ",""+stroke_dc_tot+"    avg=v"+stroke_dc_tot/loop_cnt);//end of calculation
                         Log.i("stroke_ndc_tot= ",""+stroke_ndc_tot+"    avg= "+stroke_ndc_tot/loop_cnt);
+                        try {
+                            fwriter.write(""+stroke_cnt+","+nowtime+","+stroke_dc_tot+","+stroke_dc_tot/loop_cnt+","+stroke_ndc_tot+","+stroke_ndc_tot/loop_cnt+"\n");
+
+                            fwriter.flush();
+                        } catch (IOException e) {
+                            Log.i("TAG","fwrite erroe"+e);
+                            e.printStackTrace();
+                        }
                     }
                     else
                     {
@@ -2193,6 +2217,25 @@ private Handler updateviews =new Handler()
             endttime=System.currentTimeMillis();
            if(loop_cnt!=0) Log.i("time","used time="+(endttime-mystarttime)+"loops=" +loop_cnt+"avg="+(endttime-mystarttime)/(loop_cnt));
            if(loop_cnt==0) Log.i("time","used time="+(endttime-mystarttime)+"loops=" +loop_cnt);
+            try {
+                fwriter.flush();
+                fwriter.close();
+            } catch (IOException e) {
+                Log.i("TAG","fwrite error at end of llap"+e);
+                e.printStackTrace();
+            }
+            String currentTime = LocalDateTime.now().toString();
+            boolean train_txt = true;
+            if(train_txt){
+
+                File des = new File(getExternalCacheDir()+currentTime+file_baseband_txt.getName());
+                try {
+                    copyFileUsingStream(file_baseband_txt,des);
+                } catch (IOException e) {
+                    Log.i("TAG","fwrite error at end of llap copying"+e);
+                    e.printStackTrace();
+                }
+            }
             llap_audioRecord.stop();
 
         }
