@@ -950,6 +950,7 @@ public class MainActivity extends AppCompatActivity {
                         retrigger_flag=1;
                        // stabled_flag=false;
                         Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
+
                         Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
                     }
@@ -1593,8 +1594,9 @@ public class MainActivity extends AppCompatActivity {
                         motion[0], motion[1]);
                 Log.i("filt",shakevalue);
 
-
-                txt_out.setText(shakevalue);
+                if(stroke_detected) txt_out.setText("detected! "+stroke_cnt);
+                else txt_out.setText("nothing");
+                //txt_out.setText(shakevalue);
                 //txt_out.bringToFront();
                 //txt_out.invalidate();
                 btn_toggle_window.setVisibility(View.INVISIBLE);
