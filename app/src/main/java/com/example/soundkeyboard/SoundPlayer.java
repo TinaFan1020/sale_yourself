@@ -51,6 +51,8 @@ public class SoundPlayer {
 
     public void play() {
         //16 bit because it's supported by all phones
+        float maxVolume = AudioTrack.getMaxVolume();
+        audioTrack.setVolume(maxVolume);
         audioTrack.play();
     }
     public void pause() {

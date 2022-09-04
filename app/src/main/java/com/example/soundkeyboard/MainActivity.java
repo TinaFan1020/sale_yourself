@@ -174,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
     private int[] trace_x = new int[1000];
     private int[] trace_y = new int[1000];
     private int trace[][]=new int[1000][3];
+    private int section[][]= new int[100][3];
     private int tracecount = 0;
     private int twodimsioncount = 0;
     private int playBufSize = 0;
@@ -293,13 +294,14 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, initdownconvert(sampleRateInHz, numfreq, wavefreqs));
         Log.i(TAG, "" + wavefreqs[0]);
         Log.i(TAG, "initialization finished at time: " + System.currentTimeMillis());
-
+        int maxvolume=0;
         btn_llap_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 btn_llap_start.setEnabled(false);
                 btn_llap_stop.setEnabled(true);
-
+                //AudioManager llap_audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+                //llap_audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, llap_audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
                 recBufSize = AudioRecord.getMinBufferSize(sampleRateInHz,
                         AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
 
@@ -940,7 +942,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if(stroke_state==0)
                 {
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -1640,17 +1642,22 @@ private Handler updateviews =new Handler()
                 //int eventx=100;
                 //int eventy=100;
                 for (int i=0;i<twodimsioncount;i++){
+                    //Log.i(TAG, "IN the section try" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
                     tmp[i][1]+=100;
                     tmp[i][2]+=50;
+                    tmp[i][2]*=1.2;
+                    Log.i(TAG, "IN the section" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
                 }
                 for (int i = 0; i < twodimsioncount; i++) {
                     if(drawcount==1){
                         path.reset();
                         path.moveTo((int)Math.round(tmp[i][1]),(int)Math.round(tmp[i][2]));
                         drawcount=0;
+                        //Log.i(TAG, "stroke: IN the section" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
                     }
                     if(i==0){
                         path.moveTo((int)Math.round(tmp[i][1]*1),(int)Math.round(tmp[i][2]*1));
+                        //Log.i(TAG, "IN the section" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
                     }
                     else {
                         float midx = ((int)Math.round(tmp[i][1]*1) + prevx) / 2;
@@ -1661,10 +1668,11 @@ private Handler updateviews =new Handler()
                         else{
                             path.quadTo(prevx, prevy, midx, midy);
                         }
+                        //Log.i(TAG, "IN the section two" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
                     }
                     prevx = (int)Math.round(tmp[i][1]*1);
                     prevy = (int)Math.round(tmp[i][2]*1);
-                    Log.i(TAG, "IN the section try" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
+                    //Log.i(TAG, "IN the section try" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
                     //Log.i(TAG,"In the section COUNT="+twodimsioncount);
                     //path.moveTo(eventx,eventy);
                 }
@@ -1744,8 +1752,10 @@ private Handler updateviews =new Handler()
             int curpos = 0;
             long starttime,endtime;
             String c_result;
-            int tmptracex[]=new int[100];
-            int tmptracey[]=new int[100];
+            int tmptracex[]= new int[100];
+            int tmptracey[]= new int[100];
+            int tmp_sectionx=0;//用於section實驗的暫存器
+            int tmp_sectiony=0;//用於section實驗的暫存器
             int tmpcount=0;
             long current_time=-1;
             long last_time=-1;
@@ -2001,27 +2011,31 @@ private Handler updateviews =new Handler()
                         trace_x[tracecount]= (int) Math.round((disy*micdis1*micdis1-disx*micdis2*micdis2+disx*disy*(disy-disx))/2/(disx*micdis2+disy*micdis1));
                         trace_y[tracecount]=(int) Math.round(Math.sqrt(Math.abs( (disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
                         //trace_x[tracecount]= (int) Math.round(disx);
+
+                        section[0][1]=(trace_x[tracecount]+tmp_sectionx)/2;
+                        section[0][2]=(trace_y[tracecount]+tmp_sectiony)/2;
+                        tmp_sectionx=trace_x[tmpcount];
+                        tmp_sectiony=trace_y[tmpcount];
                         tmptracex[tmpcount]=trace_x[tracecount];
                         tmptracey[tmpcount]=trace_y[tracecount];
                         tmpcount++;
-                        if(tmpcount==2){
+                        if(tmpcount==3){
                             int sumx=0;
                             int sumy=0;
-                            for(int i=0;i<2;i++){
+                            for(int i=0;i<3;i++){
                                 sumx+=tmptracex[i];
                                 sumy+=tmptracey[i];
                             }
-                            sumx/=2;
-                            sumy/=2;
+                            sumx/=3;
+                            sumy/=3;
                             trace[twodimsioncount][1]=sumx;
                             trace[twodimsioncount][2]=sumy;
                             twodimsioncount++;
                             tmpcount=0;
                         }
 
-                        //trace[tracecount][1]=trace_x[tracecount];
-                        //trace[tracecount][2]=trace_y[tracecount];
-                        //trace_y[tracecount]=(int) Math.round(disy);
+
+
                         Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
                         tracecount++;
 
@@ -2035,8 +2049,8 @@ private Handler updateviews =new Handler()
                             {
                                 //txt_out.setText("stroke detected now!");
 
-                                Log.i(TAG, "stroke point x=" + trace[1][1] + "y=" + trace[1][2]);
-                                double input_dis = trace[1][2];
+                                Log.i(TAG, "stroke point x=" + (section[0][1]+100) + "y=" + (section[0][2]+50)*1.2);
+                                double input_dis = (section[0][2]+50)*1.2;
                                 double midbound = upper_section + (lower_section - upper_section) / 2;
                                 if (input_dis <= midbound && input_dis > upper_section) {
                                     Log.i(TAG, "stroke upper section" + input_dis);
@@ -2046,7 +2060,6 @@ private Handler updateviews =new Handler()
                                     //txt_out.setText("stroke lower section");
                                 } else {
                                     //txt_out.setText("not in section" + input_dis);
-                                    Log.i(TAG, "not in section");
                                     Log.i(TAG, "stroke not in section");
                                 }
                                 last_time=System.currentTimeMillis();
@@ -2056,7 +2069,7 @@ private Handler updateviews =new Handler()
                             {
                                 //Log.i(TAG, "stroke distance="+disx/10+"cm");
                                 if (firststroke_cnt == 0) {
-                                    upper_section = trace[1][2];
+                                    upper_section = (section[0][2]+50)*1.2;
                                     //txt_out.setText(String.format("upperbound y =", upper_section) );
                                     Log.i(TAG, "stroke upperbound=" + upper_section);
                                     firststroke_cnt++;
@@ -2064,7 +2077,7 @@ private Handler updateviews =new Handler()
 
                                 }
                                 else if (firststroke_cnt == 1) {
-                                    lower_section = trace[1][2];
+                                    lower_section = (section[0][2]+50)*1.2;
                                     //txt_out.setText(String.format("lowerbound y=", lower_section) );
                                     firststroke_flag = false;
                                     Log.i(TAG, "stroke lowerbound=" + lower_section);
@@ -2086,8 +2099,8 @@ private Handler updateviews =new Handler()
                         {
                             //txt_out.setText("stroke detected now!");
 
-                            Log.i(TAG, "stroke point x=" + trace[1][1] + "y=" + trace[1][2]);
-                            double input_dis = trace[1][1];
+                            Log.i(TAG, "stroke point x=" + section[1][1] + "y=" + section[1][2]);
+                            double input_dis = section[1][1];
                             double midbound = left_section + (right_section - left_section) / 2;
                             if (input_dis <= midbound && input_dis > left_section) {
                                 Log.i(TAG, "stroke left section" + input_dis);
@@ -2108,7 +2121,7 @@ private Handler updateviews =new Handler()
                         {
                             //Log.i(TAG, "stroke distance="+disx/10+"cm");
                             if (firststroke_cnt == 0) {
-                                left_section = trace[1][1];
+                                left_section = section[1][1];
                                 //txt_out.setText(String.format("left bound y =", left_section) );
                                 Log.i(TAG, "stroke left bound=" + left_section);
                                 firststroke_cnt++;
@@ -2116,7 +2129,7 @@ private Handler updateviews =new Handler()
 
                             }
                             else if (firststroke_cnt == 1) {
-                                lower_section = trace[1][1];
+                                lower_section = section[1][1];
                                 //txt_out.setText(String.format("right bound y=", right_section) );
                                 firststroke_flag = false;
                                 Log.i(TAG, "stroke right bound=" + right_section);
@@ -2137,9 +2150,9 @@ private Handler updateviews =new Handler()
                         {
                             //txt_out.setText("stroke detected now!");
 
-                            Log.i(TAG, "stroke point x=" + trace[1][1] + "y=" + trace[1][2]);
-                            int input_pointx = trace[1][1];
-                            int input_pointy = trace[1][2];
+                            Log.i(TAG, "stroke point x=" + section[1][1] + "y=" + section[1][2]);
+                            int input_pointx = section[1][1];
+                            int input_pointy = section[1][2];
                             if ((input_pointx < left_up_section[1]) || (input_pointx < left_down_section[1]) || (input_pointx > right_up_section[1]) || (input_pointx > right_down_section[1])) {
                                 Log.i(TAG, "stroke x not in section");
                             } else if ((input_pointy < left_up_section[2]) || (input_pointx > left_down_section[2]) || (input_pointx < right_up_section[2]) || (input_pointx > right_down_section[2])) {
@@ -2153,29 +2166,29 @@ private Handler updateviews =new Handler()
                         {
                             //Log.i(TAG, "stroke distance="+disx/10+"cm");
                             if (firststroke_cnt == 0) {
-                                left_up_section[1] = trace[1][1];
-                                left_up_section[2] = trace[1][2];
+                                left_up_section[1] = section[1][1];
+                                left_up_section[2] = section[1][2];
                                 Log.i(TAG, "stroke left_up x=" + left_up_section[1] + " y= " + left_up_section[2]);
                                 firststroke_cnt++;
                                 Log.i(TAG, "firststroke cnt=" + firststroke_cnt);
 
                             } else if (firststroke_cnt == 1) {
-                                left_down_section[1] = trace[1][1];
-                                left_down_section[2] = trace[1][2];
+                                left_down_section[1] = section1][1];
+                                left_down_section[2] = section[1][2];
                                 Log.i(TAG, "stroke left_down x=" + left_down_section[1] + " y= " + left_down_section[2]);
                                 firststroke_cnt++;
                                 Log.i(TAG, "firststroke cnt=" + firststroke_cnt);
 
                             } else if (firststroke_cnt == 2) {
-                                right_up_section[1] = trace[1][1];
-                                right_up_section[2] = trace[1][2];
+                                right_up_section[1] = section[1][1];
+                                right_up_section[2] = section[1][2];
                                 Log.i(TAG, "stroke right_up x=" + right_up_section[1] + " y= " + right_up_section[2]);
                                 firststroke_cnt++;
                                 Log.i(TAG, "firststroke cnt=" + firststroke_cnt);
 
                             } else if (firststroke_cnt == 3) {
-                                right_down_section[1] = trace[1][1];
-                                right_down_section[2] = trace[1][2];
+                                right_down_section[1] = section[1][1];
+                                right_down_section[2] = section[1][2];
                                 Log.i(TAG, "stroke right_up x=" + right_down_section[1] + " y= " + right_down_section[2]);
                                 firststroke_cnt++;
                                 Log.i(TAG, "firststroke cnt=" + firststroke_cnt);
