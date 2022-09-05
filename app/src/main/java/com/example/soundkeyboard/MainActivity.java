@@ -89,7 +89,7 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false;
-    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop;
+    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate;
     ImageView imageView;//最上面畫畫ㄉ
     ImageView imageView2;//最下面顯示路徑的
     TextView txt_out,texDistance_x,texDistance_y,absolute_disx,absolute_disy;//中間顯示字ㄉ
@@ -231,6 +231,8 @@ public class MainActivity extends AppCompatActivity {
         btn_cal_sd = findViewById(R.id.btn_cal_sd);
         btn_llap_start = findViewById(R.id.btn_llap_start);
         btn_llap_stop = findViewById(R.id.btn_llap_stop);
+        btn_train=findViewById(R.id.btn_train);
+        btn_generate=findViewById(R.id.btn_generate);
         frequency_text = findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
         texDistance_x=findViewById(R.id.text_disatnce_x);
@@ -940,9 +942,12 @@ public class MainActivity extends AppCompatActivity {
 
                 //three state counter if recently detected block for a moment to prevent error
 
+                Log.i("temp test",""+pos_avg_local +"  "+gravity_flag+" "+"  "+triggered_flag );
+
                 if(stroke_state==0)
                 {
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
+
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -960,17 +965,17 @@ public class MainActivity extends AppCompatActivity {
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==true)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected shake triggered already!");
+                        //Log.i(TAG,"fake stroke detected shake triggered already!");
                     }
-                    else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
+                    else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false)
                     {
                         stroke_detected=false;
-                       // Log.i(TAG,"fake stroke detected no shake!!");
+                       //Log.i(TAG,"fake stroke detected no shake!!");
                     }
                     else if(pos_avg_local<=stroke_power_min&&gravity_flag==true &&triggered_flag==false)
                     {
                         stroke_detected=false;
-                        //Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+                       // Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
 
                     }
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
@@ -981,6 +986,7 @@ public class MainActivity extends AppCompatActivity {
                     else
                     {
                         stroke_detected=false;
+                        //Log.i(TAG,"what happened?"+pos_avg_local+"  "+gravity_flag);
                     }
                 }
                 else if(stroke_state==-1)
@@ -1529,7 +1535,7 @@ public class MainActivity extends AppCompatActivity {
                 lasty=event.values[1];
 
 
-
+                //Log.i("gravitytmp","dx "+Math.abs(dx)+"  dy  "+Math.abs(dy));
                 if(Math.abs(dx)>0.00006*100000&&Math.abs(dy)>0.00006*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
                 {
                     if(gravity_flag==true)
