@@ -283,8 +283,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        disx = 0;
-        disy = 250;
+        //disx = 0;
+        //disy = 250;
         now = 0;
         lastcalibration = 0;
 
@@ -1998,7 +1998,7 @@ private Handler updateviews =new Handler()
                             }
                         }*/
                         //計算相對距離，敲擊為trigger
-                        if((stroke_detected==true)&&(stroke_detected!=stroke_flag))
+                        /*if((stroke_detected==true)&&(stroke_detected!=stroke_flag))
                         {
 
                             dischangex=disx-tmpx;
@@ -2007,16 +2007,16 @@ private Handler updateviews =new Handler()
                             tmpy=disy;
                             stroke_flag=stroke_detected;
                         }
-                        stroke_flag=stroke_detected;
+                        stroke_flag=stroke_detected;*/
                         trace_x[tracecount]= (int) Math.round((disy*micdis1*micdis1-disx*micdis2*micdis2+disx*disy*(disy-disx))/2/(disx*micdis2+disy*micdis1));
                         trace_y[tracecount]=(int) Math.round(Math.sqrt(Math.abs( (disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
                         //trace_x[tracecount]= (int) Math.round(disx);
-
-                        section[0][1]=(trace_x[tracecount]+tmp_sectionx)/2;
-                        section[0][2]=(trace_y[tracecount]+tmp_sectiony)/2;
-                        tmp_sectionx=trace_x[tmpcount];
-                        tmp_sectiony=trace_y[tmpcount];
-                        tmptracex[tmpcount]=trace_x[tracecount];
+                        Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
+                        //section[0][1]=(trace_x[tracecount]+tmp_sectionx)/2;
+                        //section[0][2]=(trace_y[tracecount]+tmp_sectiony)/2;
+                        //tmp_sectionx=trace_x[tracecount];
+                        //tmp_sectiony=trace_y[tracecount];
+                        /*tmptracex[tmpcount]=trace_x[tracecount];
                         tmptracey[tmpcount]=trace_y[tracecount];
                         tmpcount++;
                         if(tmpcount==3){
@@ -2032,15 +2032,15 @@ private Handler updateviews =new Handler()
                             trace[twodimsioncount][2]=sumy;
                             twodimsioncount++;
                             tmpcount=0;
-                        }
+                        }*/
 
 
 
-                        Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
+                        //Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
                         tracecount++;
 
                         //敲擊實驗開始
-                        /**/ //將手機橫放並在上方麥克風的左側進行實驗
+                        /* //將手機橫放並在上方麥克風的左側進行實驗
 
                         //實驗一: 測試上下 請先敲擊上方(也就是離手機較近的那邊)
                         current_time=System.currentTimeMillis();
@@ -2087,7 +2087,7 @@ private Handler updateviews =new Handler()
                                 }
                                 last_time=System.currentTimeMillis();
                             }
-                        }
+                        }*/
 
 
                          /*
