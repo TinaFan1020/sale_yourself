@@ -1987,7 +1987,6 @@ private Handler updateviews =new Handler()
                             firststart_flag=true;
                             last_time=System.currentTimeMillis();
                         }
-                        //計算
                         current_time=System.currentTimeMillis();
                         if(current_time-last_time>1000){
                             last_time=System.currentTimeMillis();
