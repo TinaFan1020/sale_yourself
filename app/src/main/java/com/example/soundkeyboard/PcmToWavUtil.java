@@ -6,6 +6,9 @@ import android.util.Log;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 /**
  * Created by HaoGuibao
  * Date 2016/8/26.
@@ -31,12 +34,15 @@ public class PcmToWavUtil
         this.mBufferSize = AudioRecord.getMinBufferSize(mSampleRate, mChannel, mEncoding);
     }
     public void pcmToWav(String inFilename, String outFilename) {
+        long starttime,endtime;
+        starttime=System.currentTimeMillis();
         FileInputStream in;
         FileOutputStream out;
         long totalAudioLen;
         long totalDataLen;
         long longSampleRate = mSampleRate;
         int channels = 1;
+        int len=0;
         long byteRate = 16 * mSampleRate * channels / 8;
         byte[] data = new byte[mBufferSize];
         try {
@@ -46,8 +52,23 @@ public class PcmToWavUtil
             totalDataLen = totalAudioLen + 36;
             writeWaveFileHeader(out, totalAudioLen, totalDataLen,
                     longSampleRate, channels, byteRate);
-            while (in.read(data) != -1) {
-                out.write(data);
+            while ((len=in.read(data)) != -1) {
+                /*
+                ByteBuffer bb=ByteBuffer.wrap(data);
+                bb.order(ByteOrder.LITTLE_ENDIAN);
+
+                Log.i("endian test","data="+data[0]+"bb="+bb.array()[0]);
+
+                out.write(bb.array());
+                */
+                 for (int i=0;i<len;i+=2)
+                 {
+                     byte tmp=data[i];
+                     data[i]=data[i+1];
+                     data[i+1]=tmp;
+                 }
+                 out.write(data);
+
             }
             in.close();
             out.close();
@@ -55,6 +76,8 @@ public class PcmToWavUtil
             Log.i("exception",e.toString());
             e.printStackTrace();
         }
+        endtime=System.currentTimeMillis();
+        Log.i("TO WAV TIME",""+(endtime-starttime));
     }
     /**
      * 加入wav檔案頭

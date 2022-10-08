@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -74,6 +76,7 @@ import java.time.LocalDateTime;
 
 import Catalano.Math.ComplexNumber;
 import Catalano.Math.Transforms.FourierTransform;
+import ML.HMM_VQ_Speech_Recognition;
 import jfftpack.RealDoubleFFT;
 
 import  Catalano.Math.Transforms.HilbertTransform;
@@ -125,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
     SensorManager sensorManager;
     Sensor sensor;
     Sensor sensor_gravity;
+    HMM_VQ_Speech_Recognition hsr;
 
     //llap zone
 
@@ -231,9 +235,9 @@ public class MainActivity extends AppCompatActivity {
         btn_cal_sd = findViewById(R.id.btn_cal_sd);
         btn_llap_start = findViewById(R.id.btn_llap_start);
         btn_llap_stop = findViewById(R.id.btn_llap_stop);
-        btn_train=findViewById(R.id.btn_train);
-        btn_generate=findViewById(R.id.btn_generate);
         frequency_text = findViewById(R.id.frequency_num);
+        btn_generate=findViewById(R.id.btn_generate);
+        btn_train=findViewById(R.id.btn_train);
         txt_out = findViewById(R.id.txt_out);
         texDistance_x=findViewById(R.id.text_disatnce_x);
         texDistance_y=findViewById(R.id.text_distance_y);
@@ -247,6 +251,9 @@ public class MainActivity extends AppCompatActivity {
         btn_play_frequency.setOnClickListener(v -> onlick_frequency_play());
         btn_stop_frequency.setOnClickListener(v -> onlick_frequency_stop());
         btn_cal_sd.setOnClickListener(v -> cal_sd());
+        hsr= new HMM_VQ_Speech_Recognition();
+        btn_generate.setOnClickListener(v -> onclick_generate());
+        btn_train.setOnClickListener(v->onclick_train());
         //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
         bitmap = Bitmap.createBitmap((int) 4096, (int) 1400, Bitmap.Config.ARGB_8888);
         bitmap2 = Bitmap.createBitmap((int) 150, (int) 150, Bitmap.Config.ARGB_8888);
@@ -272,6 +279,8 @@ public class MainActivity extends AppCompatActivity {
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         sensor_gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+        HMM_VQ_Speech_Recognition HMM = new HMM_VQ_Speech_Recognition( );
 
         //String testc=testcc('c');
         //Log.i(TAG,testc);
@@ -361,6 +370,18 @@ public class MainActivity extends AppCompatActivity {
 
         //llap zone
 
+    }
+
+    private void onclick_train() {
+        hsr.train();
+        return;
+    }
+
+    private void onclick_generate() {
+        System.out.println("++++++generate+++++");
+        hsr.generate();
+        System.out.println("++++++generate succeed+++++");
+        return;
     }
 
     private void onlick_frequency_stop() {
@@ -761,11 +782,13 @@ public class MainActivity extends AppCompatActivity {
 
                     //write original data into pcm2
                     dos_org.writeShort(buffer[i]);
+                    
 
                 };
                 for(int i=0;i<bufferSize2channel;i++)
                 {
                     dos_org_2ch.writeShort(buffer2channel[i]);
+
                 }
                 /*
                 pos_avg_local=(double)pos_total_local/(double)pos_cnt_local;
@@ -874,9 +897,9 @@ public class MainActivity extends AppCompatActivity {
                 {
                     short tmp=(short)Math.round(toTransform[i]);
                     short tmp_2ch=(short)Math.round(toTransform_2ch[i]);
-                    dos.writeShort(tmp);
-                    dos_2ch.writeShort(tmp);
-                    dos_2ch.writeShort(tmp_2ch);
+                    dos.writeShort(tmp*10);
+                    dos_2ch.writeShort(tmp*10);
+                    dos_2ch.writeShort(tmp_2ch*10);
                 }
                 // detect stroke from inverse fft data
                 for(int i=0;i<bufferSize;i++)
@@ -942,12 +965,9 @@ public class MainActivity extends AppCompatActivity {
 
                 //three state counter if recently detected block for a moment to prevent error
 
-                Log.i("temp test",""+pos_avg_local +"  "+gravity_flag+" "+"  "+triggered_flag );
-
                 if(stroke_state==0)
                 {
-
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -965,17 +985,17 @@ public class MainActivity extends AppCompatActivity {
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==true)
                     {
                         stroke_detected=false;
-                        //Log.i(TAG,"fake stroke detected shake triggered already!");
+                        Log.i(TAG,"fake stroke detected shake triggered already!");
                     }
-                    else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false)
+                    else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
                     {
                         stroke_detected=false;
-                       //Log.i(TAG,"fake stroke detected no shake!!");
+                       // Log.i(TAG,"fake stroke detected no shake!!");
                     }
                     else if(pos_avg_local<=stroke_power_min&&gravity_flag==true &&triggered_flag==false)
                     {
                         stroke_detected=false;
-                       // Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+                        //Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
 
                     }
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
@@ -986,7 +1006,6 @@ public class MainActivity extends AppCompatActivity {
                     else
                     {
                         stroke_detected=false;
-                        //Log.i(TAG,"what happened?"+pos_avg_local+"  "+gravity_flag);
                     }
                 }
                 else if(stroke_state==-1)
@@ -1087,7 +1106,7 @@ public class MainActivity extends AppCompatActivity {
                 String path=getExternalCacheDir()+"/"+file.getName();
                 String outpath = path.replace(".pcm", ".wav");
                 File wavfile = new File(outpath);
-                PCMToWAV(file_org,wavfile,1,48000,16);
+                PCMToWAV(file,wavfile,1,48000,16);
                 File des = new File(getExternalCacheDir()+currentTime+wavfile.getName());
                 copyFileUsingStream(wavfile,des);
 
@@ -1107,7 +1126,7 @@ public class MainActivity extends AppCompatActivity {
             boolean train_fft_towav_v2 = true;
             if(train_fft_towav_v2)
             {
-                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
+                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil( 48000, AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
                 String path=getExternalCacheDir()+"/"+file.getName();
                 String outpath = path.replace(".pcm", ".wav");
                 pcmToWavUtil.pcmToWav(path, outpath);
@@ -1118,7 +1137,7 @@ public class MainActivity extends AppCompatActivity {
             boolean train_fft_towav_v2_2ch = true;
             if(train_fft_towav_v2_2ch)
             {
-                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
+                PcmToWavUtil pcmToWavUtil = new PcmToWavUtil(48000, AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT);
                 String path=getExternalCacheDir()+"/"+file_2ch.getName();
                 String outpath = path.replace(".pcm", ".wav");
                 pcmToWavUtil.pcmToWav(path, outpath);
@@ -1126,7 +1145,7 @@ public class MainActivity extends AppCompatActivity {
                 File des = new File(getExternalCacheDir()+currentTime+"audio_fft_2ch.wav");
                 copyFileUsingStream(souce,des);
             }
-            boolean train_unfft_towav_v2 = true;
+            boolean train_unfft_towav_v2 = false;
             if(train_unfft_towav_v2)
             {
                 PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
@@ -1139,7 +1158,7 @@ public class MainActivity extends AppCompatActivity {
 
 
             }
-            boolean train_unfft_towav_v2_2ch = true;
+            boolean train_unfft_towav_v2_2ch = false;
             if(train_unfft_towav_v2_2ch)
             {
                 PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
@@ -1196,6 +1215,37 @@ public class MainActivity extends AppCompatActivity {
             writeToOutput(encoded, "data"); // subchunk 2 id
             writeToOutput(encoded, inputSize); // subchunk 2 size
             copy(new FileInputStream(input), encoded);
+        }
+    }
+
+    public static byte[] toByteArray(File f) throws IOException {
+
+
+        if (!f.exists()) {
+            throw new FileNotFoundException();
+        }
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream((int) f.length());
+        BufferedInputStream in = null;
+        try {
+            in = new BufferedInputStream(new FileInputStream(f));
+            int buf_size = 1024;
+            byte[] buffer = new byte[buf_size];
+            int len = 0;
+            while (-1 != (len = in.read(buffer, 0, buf_size))) {
+                bos.write(buffer, 0, len);
+            }
+            return bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw e;
+        } finally {
+            try {
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            bos.close();
         }
     }
 
@@ -1478,8 +1528,8 @@ public class MainActivity extends AppCompatActivity {
     }
     public void onResume() {
         super.onResume();
-        sensorManager.registerListener(gyroListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(gyroListener, sensor_gravity, SensorManager.SENSOR_DELAY_NORMAL);
+        //sensorManager.registerListener(gyroListener, sensor, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(gyroListener, sensor_gravity, SensorManager.SENSOR_DELAY_GAME);
     }
 
     public void onStop() {
@@ -1535,7 +1585,7 @@ public class MainActivity extends AppCompatActivity {
                 lasty=event.values[1];
 
 
-                //Log.i("gravitytmp","dx "+Math.abs(dx)+"  dy  "+Math.abs(dy));
+
                 if(Math.abs(dx)>0.00006*100000&&Math.abs(dy)>0.00006*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
                 {
                     if(gravity_flag==true)
@@ -1600,7 +1650,7 @@ public class MainActivity extends AppCompatActivity {
                                 "Motion\nX: %8.5f  Y: %8.5f\n",
                         event.values[0], event.values[1],
                         motion[0], motion[1]);
-                Log.i("filt",shakevalue);
+               // Log.i("filt",shakevalue);
 
                 if(stroke_detected) txt_out.setText("detected! "+stroke_cnt);
                 else txt_out.setText("nothing");
