@@ -451,7 +451,8 @@ public class MainActivity extends AppCompatActivity {
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R&&hasallfile==false)
         {
             Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-            startActivity(intent);
+            intent.setData(Uri.parse("package:"+getPackageName()));
+            this.startActivityForResult(intent,1024);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!hasmic) {
