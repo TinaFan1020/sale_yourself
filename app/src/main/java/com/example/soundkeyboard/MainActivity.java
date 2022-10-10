@@ -439,9 +439,11 @@ public class MainActivity extends AppCompatActivity {
             if(Environment.isExternalStorageManager())
             {
                 hasallfile=true;
+                Log.i("mytag","hasallfile");
             }else
             {
                 hasallfile=false;
+                Log.i("mytag","nohasallfile");
             }
         }else
         {
@@ -450,9 +452,19 @@ public class MainActivity extends AppCompatActivity {
         //Log.i("per",""+hasshake);
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R&&hasallfile==false)
         {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-            intent.setData(Uri.parse("package:"+getPackageName()));
-            this.startActivityForResult(intent,1024);
+            //Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+            //intent.setData(Uri.parse("package:"+getPackageName()));
+            //startActivity(intent);
+            //this.startActivityForResult(intent,1024);
+            try {
+                Uri uri = Uri.parse("package:" + BuildConfig.APPLICATION_ID);
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri);
+                startActivity(intent);
+            } catch (Exception ex){
+                Intent intent = new Intent();
+                intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                startActivity(intent);
+            }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!hasmic) {
