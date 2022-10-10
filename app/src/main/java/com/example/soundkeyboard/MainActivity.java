@@ -77,6 +77,8 @@ import java.time.LocalDateTime;
 import Catalano.Math.ComplexNumber;
 import Catalano.Math.Transforms.FourierTransform;
 import ML.HMM_VQ_Speech_Recognition;
+import ML.Operations;
+import ML.audio.JSoundCapture;
 import jfftpack.RealDoubleFFT;
 
 import  Catalano.Math.Transforms.HilbertTransform;
@@ -110,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
     boolean gravity_flag=false;//true=detected stroke
     boolean too_much_flag=false;//true = too much
     boolean triggered_flag=false;
+    boolean protago_flag=false;
     boolean shake_triggered=false;
     boolean stabled_flag=true;
     int retrigger_flag=0;
@@ -138,7 +141,8 @@ public class MainActivity extends AppCompatActivity {
     Sensor sensor;
     Sensor sensor_gravity;
     HMM_VQ_Speech_Recognition hsr;
-
+    private final Operations opr = new Operations();
+    private JSoundCapture soundCapture = null;
     //llap zone
 
 
@@ -636,9 +640,12 @@ public class MainActivity extends AppCompatActivity {
         int pos_total_global=0;
         int pos_cnt_global=0;
         stroke_cnt=0;
+        protago_flag=false;
         int stroke_state=0;
         long last_stroke_time=0,current_time=0;
+
         int train_flag=0;//0 for starter 1 for grant access
+        long start_record_time=System.currentTimeMillis();
         ////////////////////////////
         //for fft
         RealDoubleFFT transformer;
@@ -922,9 +929,7 @@ public class MainActivity extends AppCompatActivity {
                 {
                     short tmp=(short)Math.round(toTransform[i]);
                     short tmp_2ch=(short)Math.round(toTransform_2ch[i]);
-                    dos.writeShort(tmp*10);
-                    dos_2ch.writeShort(tmp*10);
-                    dos_2ch.writeShort(tmp_2ch*10);
+
                     dos.writeShort(tmp*8);
                     dos_2ch.writeShort(tmp*8);
                     dos_2ch.writeShort(tmp_2ch*8);
@@ -936,6 +941,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 current_time=System.currentTimeMillis();
+                if(current_time-start_record_time>=2000)protago_flag = true;
                 if(stroke_detected&&train_flag==0)
                 {
                     train_flag=1;
@@ -944,10 +950,20 @@ public class MainActivity extends AppCompatActivity {
                 {
                     if(current_time-last_stroke_time>=200)
                     {
-                        train_flag=0;
-                        //store data finished onto nextone
 
+                        train_flag=0;
+                        //store data finished onto next one
+                        //Log.i("tmp data stored"," before");
                         store_stroke_file(stroke_data_tmp_2ch,stroke_data_ptr);
+                        //todo test file recognize
+                        //Log.i("tmp data stored",getExternalCacheDir().getAbsolutePath() + "/stroke_tmp.wav");
+                        File test_stroke_file = new File(getExternalCacheDir().getAbsolutePath() + "/stroke_tmp.wav");
+                        System.out.println("mytag"+test_stroke_file.getPath());
+                        opr.hmmGetWordFromFile(test_stroke_file);
+                        System.out.println("opr success");
+                        //String test_result = opr.hmmGetWordFromFile(test_stroke_file).toString();
+                        //txt_out.setText(test_result);
+                        //Log.i("test_result",test_result);
                     }
                     else
                     {
@@ -1026,7 +1042,7 @@ public class MainActivity extends AppCompatActivity {
                 if(stroke_state==0)
                 {
 
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0&&gravity_flag==true&&too_much_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0&&gravity_flag==true&&too_much_flag==false&&protago_flag==true)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -1268,12 +1284,12 @@ public class MainActivity extends AppCompatActivity {
             if(i==stroke_data_tmp_2ch[0].length-1) Log.i("tmp file test end","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
 
         }
-            PcmToWavUtil pcmToWavUtil = new PcmToWavUtil();
+            PcmToWavUtil pcmToWavUtil = new PcmToWavUtil(48000, AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
             String path=getExternalCacheDir()+"/"+f.getName();
             String outpath = path.replace(".pcm", ".wav");
             pcmToWavUtil.pcmToWav(path, outpath);
 
-            PcmToWavUtil pcmToWavUtil2ch = new PcmToWavUtil();
+            PcmToWavUtil pcmToWavUtil2ch = new PcmToWavUtil(48000, AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT);
             String path2ch=getExternalCacheDir()+"/"+f2ch.getName();
             String outpath2ch = path.replace(".pcm", ".wav");
             pcmToWavUtil2ch.pcmToWav(path2ch, outpath2ch);
@@ -1760,10 +1776,10 @@ public class MainActivity extends AppCompatActivity {
                                 "Motion\nX: %8.5f  Y: %8.5f\n",
                         event.values[0], event.values[1],
                         motion[0], motion[1]);
-                Log.i("filt",shakevalue);
+               // Log.i("filt",shakevalue);
 
-                if(stroke_detected) txt_out.setText("detected! "+stroke_cnt);
-                else txt_out.setText("nothing");
+                //if(stroke_detected) txt_out.setText("detected! "+stroke_cnt);
+                //else txt_out.setText("nothing");
                 //txt_out.setText(shakevalue);
                 //txt_out.bringToFront();
                 //txt_out.invalidate();
@@ -1858,7 +1874,7 @@ private Handler updateviews =new Handler()
                 absolute_disy.setText("");
 
             }
-            Log.i(TAG,"count" + tracecount);
+            //Log.i(TAG,"count" + tracecount);
             tracecount=0;
         }
         boolean xydata = false;
@@ -2634,7 +2650,7 @@ private Handler updateviews =new Handler()
                 e.printStackTrace();
             }
             String currentTime = LocalDateTime.now().toString();
-            boolean train_txt = true;
+            boolean train_txt = false;
             if(train_txt){
 
                 File des = new File(getExternalCacheDir()+currentTime+file_baseband_txt.getName());

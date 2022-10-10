@@ -1,5 +1,9 @@
 package ML.db;
 
+import static android.os.Environment.DIRECTORY_MUSIC;
+
+import android.os.Environment;
+
 import ML.classify.speech.CodeBookDictionary;
 import ML.classify.speech.HMMModel;
 
@@ -46,11 +50,24 @@ public class ObjectIODataBase implements DataBase {
      */
     public void setType( String type ) {
         this.type = type;
+        File ModelFile = new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()
+                    + "//SoundKeyboard_ModelFile");
+        if (!ModelFile.exists()){
+            ModelFile.mkdir();
+        }
         if ( this.type.equalsIgnoreCase( "hmm" ) ) {
-            CURRENTFOLDER = "models" + File.separator + "HMM";
+            CURRENTFOLDER = ModelFile.getPath() + File.separator + "HMM";
+            File ModelFile_check1 = new File(CURRENTFOLDER);
+            if (!ModelFile_check1.exists()){
+                ModelFile_check1.mkdir();
+            }
         }
         if ( this.type.equalsIgnoreCase( "cbk" ) ) {
-            CURRENTFOLDER = "models" + File.separator + "codeBook";
+            CURRENTFOLDER = ModelFile.getPath() + File.separator + "codeBook";
+            File ModelFile_check2 = new File(CURRENTFOLDER);
+            if (!ModelFile_check2.exists()){
+                ModelFile_check2.mkdir();
+            }
         }
     }
 
@@ -103,6 +120,7 @@ public class ObjectIODataBase implements DataBase {
             ObjectIO< CodeBookDictionary > oio = new ObjectIO<>();
             oio.setModel( ( CodeBookDictionary ) model );
             oio.saveModel( CURRENTFOLDER + File.separator + CODEBOOKFILENAME + "." + type );
+
         }
 
     }

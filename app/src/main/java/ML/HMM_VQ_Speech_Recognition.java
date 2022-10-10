@@ -494,43 +494,6 @@ public class HMM_VQ_Speech_Recognition {
      */
 
 
-    //TODO 呼叫HMM
-    /*
-    public static void main( String[] args ) {
-        try {
-            UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName( ) );
-        } catch ( Exception e ) {
-            System.out.println( e.toString( ) );
-        }
-        SwingUtilities.invokeLater(() -> {
-            HMM_VQ_Speech_Recognition test = new HMM_VQ_Speech_Recognition( );
-            test.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-
-            test.setResizable( false );
-            test.setVisible( true );
-        });
-    }
-
-     */
-/*
-    private JLabel getLblChooseAWord( ) {
-        if ( lblChooseAWord == null ) {
-            lblChooseAWord = new JLabel( "Choose a word to record sound and save to corresponding folder" );
-            lblChooseAWord.setBounds( 11, 77, 325, 14 );
-        }
-        return lblChooseAWord;
-    }
-
-    private JLabel getLblAddANew( ) {
-        if ( lblAddANew == null ) {
-            lblAddANew = new JLabel( "Add a new Word" );
-            lblAddANew.setBounds( 11, 11, 126, 14 );
-        }
-        return lblAddANew;
-    }
-
-
- */
     public void generate()
     {
         try {
@@ -542,22 +505,6 @@ public class HMM_VQ_Speech_Recognition {
     }
 
 
-/*
-    private JButton getGenerateCodeBookBtn( ) {
-        if ( generateCodeBookBtn == null ) {
-            generateCodeBookBtn = new JButton( "Generate CodeBook" );
-            generateCodeBookBtn.addActionListener(e -> {
-                try {
-                    opr.generateCodebook( );
-                } catch ( Exception e2 ) {
-                    e2.printStackTrace( );
-                }
-            });
-            generateCodeBookBtn.setBounds( 10, 32, 167, 23 );
-        }
-        return generateCodeBookBtn;
-    }
-*/
 
     public void train()
     {
@@ -567,22 +514,6 @@ public class HMM_VQ_Speech_Recognition {
             e2.printStackTrace( );
     }
 
-    /*
-    private JButton getBtnNewButton_2( ) {
-        if ( btnNewButton_2 == null ) {
-            btnNewButton_2 = new JButton( "Train HMM" );
-            btnNewButton_2.addActionListener(e -> {
-                try {
-                    opr.hmmTrain( );
-                } catch ( Exception e2 ) {
-                    e2.printStackTrace( );
 
-                }
-            });
-            btnNewButton_2.setBounds( 10, 74, 167, 23 );
-        }
-        return btnNewButton_2;
-    }
-     */
 }
 }
