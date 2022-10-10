@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
     int[] right_up_section = new int[3];
     int[] right_down_section = new int[3];
     //short[] stroke_data_tmp = new short[48000/2];//samplerate/2
-    short[][] stroke_data_tmp_2ch=new short[2][48000/2];
+    short[][] stroke_data_tmp_2ch=new short[2][48000];//TODO CIRCLE TMP SIZE
     int stroke_data_ptr=0;
     int last_pointx=0;
     int last_pointy=0;
@@ -971,7 +971,8 @@ public class MainActivity extends AppCompatActivity {
                     stroke_data_tmp_2ch[0][stroke_data_ptr]= (short) (tmp*8);
                     stroke_data_tmp_2ch[1][stroke_data_ptr]= (short) (tmp_2ch*8);
                     stroke_data_ptr++;
-                    stroke_data_ptr%=(sampleRateInHz/2);
+                    stroke_data_ptr%=48000;
+                    //TODO CIRCLE TMP PTR
                 }
 
                 current_time=System.currentTimeMillis();
@@ -982,7 +983,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else if(train_flag==1)
                 {
-                    if(current_time-last_stroke_time>=200)
+                    if(current_time-last_stroke_time>=300)//TODO CIRCLE TMP TIME
                     {
 
                         train_flag=0;
@@ -1315,8 +1316,8 @@ public class MainActivity extends AppCompatActivity {
             dos.writeShort(stroke_data_tmp_2ch[0][(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length]);
             dos_2ch.writeShort(stroke_data_tmp_2ch[0][(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length]);
             dos_2ch.writeShort(stroke_data_tmp_2ch[1][(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length]);
-            //if(i==0) Log.i("tmp file test start","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
-            //if(i==stroke_data_tmp_2ch[0].length-1) Log.i("tmp file test end","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
+            if(i==0) Log.i("tmp file test start","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
+            if(i==stroke_data_tmp_2ch[0].length-1) Log.i("tmp file test end","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
 
         }
             PcmToWavUtil pcmToWavUtil = new PcmToWavUtil(48000, AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
