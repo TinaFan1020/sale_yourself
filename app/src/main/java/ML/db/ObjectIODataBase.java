@@ -44,6 +44,7 @@ public class ObjectIODataBase implements DataBase {
     public ObjectIODataBase( ) {
     }
 
+
     /**
      * @param type
      *            type of the model, valid entry are either gmm, hmm, or cbk
@@ -119,6 +120,7 @@ public class ObjectIODataBase implements DataBase {
         if ( type.equalsIgnoreCase( "cbk" ) ) {
             ObjectIO< CodeBookDictionary > oio = new ObjectIO<>();
             oio.setModel( ( CodeBookDictionary ) model );
+
             oio.saveModel( CURRENTFOLDER + File.separator + CODEBOOKFILENAME + "." + type );
 
         }

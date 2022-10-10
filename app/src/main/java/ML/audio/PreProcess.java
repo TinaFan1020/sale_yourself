@@ -18,6 +18,7 @@ public class PreProcess {
 	final float[]				originalSignal;		// initial extracted PCM,
 	final float[]				afterEndPtDetection;// after endPointDetection
 	public int			noOfFrames;			// calculated total no of frames
+	public int 			check_frame;
 	final int					samplePerFrame;		// how many samples in one frame
 	int					framedArrayLength;	// how many samples in framed array
 	public float[][]	framedSignal;
@@ -31,7 +32,7 @@ public class PreProcess {
 	 * @param samplePerFrame
 	 *            how many samples in one frame,=660 << frameDuration, typically 30; samplingFreq, typically 22Khz
 	 */
-	public PreProcess( float[] originalSignal, int samplePerFrame, int samplingRate ) {
+	public PreProcess( float[] originalSignal, int samplePerFrame, int samplingRate) {
 		this.originalSignal = originalSignal;
 		this.samplePerFrame = samplePerFrame;
 		this.samplingRate = samplingRate;
@@ -42,9 +43,17 @@ public class PreProcess {
 		afterEndPtDetection = epd.doEndPointDetection( );
 		System.out.println(afterEndPtDetection.length+" afterEndPtDetection.length ");
 		// ArrayWriter.printFloatArrayToFile(afterEndPtDetection, "endPt.txt");
-		doFraming( );
-		doWindowing( );
+		//todo jump
+		check_frame = doFraming( );
+
+		System.out.println("check_frame_in_pre" + check_frame);
+		if (check_frame > -1) {doWindowing( );}
 	}
+	public int jump_frame(){
+		System.out.println("check_frame_in_jump_frame" + check_frame);
+		return check_frame;
+	}
+
 
 	private void normalizePCM( ) {
 		float max = originalSignal[ 0 ];
@@ -62,10 +71,11 @@ public class PreProcess {
 	/**
 	 * divides the whole signal into frames of samplerPerFrame
 	 */
-	private void doFraming( ) {
+	private int doFraming( ) {
 		// calculate no of frames, for framing
 
 		noOfFrames = 2 * afterEndPtDetection.length / samplePerFrame - 1;
+		if(noOfFrames<=0) return -1;
 		System.out.println( "noOfFrames       " + noOfFrames + "  samplePerFrame     " + samplePerFrame + "  EPD length   " + afterEndPtDetection.length + " afterEndPtDetection length "+afterEndPtDetection.length );
 		framedSignal = new float[ noOfFrames ][ samplePerFrame ];
 		for ( int i = 0; i < noOfFrames; i++ ) {
@@ -73,6 +83,7 @@ public class PreProcess {
 			if (samplePerFrame >= 0)
 				System.arraycopy(afterEndPtDetection, startIndex + 0, framedSignal[i], 0, samplePerFrame);
 		}
+		return 0;
 	}
 
 	/**

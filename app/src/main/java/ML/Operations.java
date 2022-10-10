@@ -193,7 +193,11 @@ public class Operations {
 	 * @throws Exception
 	 */
 	public FeatureVector extractFeatureFromExtractedAmplitureByteArray(float[] arrAmp) {
+		int check_frame = 0;
 		prp = new PreProcess(arrAmp, samplePerFrame, samplingRate);
+		System.out.println("check_frame " + check_frame);
+		//todo jump_catch
+		//int i = new jump_frame();
 		fExt = new FeatureExtract(prp.framedSignal, samplingRate, samplePerFrame);
 		fExt.makeMfccFeatureVector();
 		return fExt.getFeatureVector();
@@ -207,9 +211,9 @@ public class Operations {
 	 */
 	private FeatureVector extractFeatureFromFile(File speechFile) throws Exception {
 		float[] arrAmp;
-		System.out.println("hmm over here");
+		//System.out.println("hmm over here");
 		arrAmp = wd.extractAmplitudeFromFile(speechFile);
-		System.out.println("hmm extractAmplitudeFromFile success");
+		//System.out.println("hmm extractAmplitudeFromFile success");
 		return extractFeatureFromExtractedAmplitureByteArray(arrAmp);
 	}
 

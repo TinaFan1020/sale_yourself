@@ -49,6 +49,7 @@ public class ObjectIO< T > {
 
 
 		// open file
+		// todo open failed: EPERM (Operation not permitted)
 		ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(file));
 		// save model
 		output.writeObject( model );
