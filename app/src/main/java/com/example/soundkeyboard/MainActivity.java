@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -27,11 +28,13 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -93,7 +96,7 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 
 public class MainActivity extends AppCompatActivity {
-    private boolean hasmic = false, isRecording, haswrite = false, hasread = false,hasshake=false;
+    private boolean hasmic = false, isRecording, haswrite = false, hasread = false,hasshake=false,hasallfile=false;
     Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate;
     ImageView imageView;//最上面畫畫ㄉ
     ImageView imageView2;//最下面顯示路徑的
@@ -431,7 +434,25 @@ public class MainActivity extends AppCompatActivity {
                 , Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
         hasshake=ActivityCompat.checkSelfPermission(this
                 , Manifest.permission.HIGH_SAMPLING_RATE_SENSORS) == PackageManager.PERMISSION_GRANTED;
-        Log.i("per",""+hasshake);
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R)
+        {
+            if(Environment.isExternalStorageManager())
+            {
+                hasallfile=true;
+            }else
+            {
+                hasallfile=false;
+            }
+        }else
+        {
+            hasallfile=true;
+        }
+        //Log.i("per",""+hasshake);
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R&&hasallfile==false)
+        {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+            startActivity(intent);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!hasmic) {
                 this.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1);
@@ -957,7 +978,7 @@ public class MainActivity extends AppCompatActivity {
                         store_stroke_file(stroke_data_tmp_2ch,stroke_data_ptr);
                         //todo test file recognize
                         //Log.i("tmp data stored",getExternalCacheDir().getAbsolutePath() + "/stroke_tmp.wav");
-                        File test_stroke_file = new File(getExternalCacheDir().getAbsolutePath() + "/stroke_tmp.wav");
+                        File test_stroke_file = new File(getExternalCacheDir().getAbsolutePath() + "/stroke_tmp_2ch.wav");
                         System.out.println("mytag"+test_stroke_file.getPath());
                         opr.hmmGetWordFromFile(test_stroke_file);
                         System.out.println("opr success");
@@ -1254,9 +1275,10 @@ public class MainActivity extends AppCompatActivity {
             dos_org.close();
             dos_org_2ch.close();
             
-        } catch (Throwable t) {
-            Log.e(TAG, "錄音失敗"+t);
+        } catch (Exception t) {
+            Log.e(TAG, "錄音失敗"+t.getMessage());
             t.printStackTrace();
+
         }
     }
 
@@ -1280,8 +1302,8 @@ public class MainActivity extends AppCompatActivity {
             dos.writeShort(stroke_data_tmp_2ch[0][(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length]);
             dos_2ch.writeShort(stroke_data_tmp_2ch[0][(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length]);
             dos_2ch.writeShort(stroke_data_tmp_2ch[1][(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length]);
-            if(i==0) Log.i("tmp file test start","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
-            if(i==stroke_data_tmp_2ch[0].length-1) Log.i("tmp file test end","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
+            //if(i==0) Log.i("tmp file test start","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
+            //if(i==stroke_data_tmp_2ch[0].length-1) Log.i("tmp file test end","ptr= "+stroke_data_ptr +"real ptr= "+(i+stroke_data_ptr+1)%stroke_data_tmp_2ch[0].length);
 
         }
             PcmToWavUtil pcmToWavUtil = new PcmToWavUtil(48000, AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
@@ -1291,7 +1313,7 @@ public class MainActivity extends AppCompatActivity {
 
             PcmToWavUtil pcmToWavUtil2ch = new PcmToWavUtil(48000, AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT);
             String path2ch=getExternalCacheDir()+"/"+f2ch.getName();
-            String outpath2ch = path.replace(".pcm", ".wav");
+            String outpath2ch = path2ch.replace(".pcm", ".wav");
             pcmToWavUtil2ch.pcmToWav(path2ch, outpath2ch);
 
 
@@ -1744,7 +1766,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else if(Math.abs(dx)>=0.002*100000&&Math.abs(dy)>=0.002*100000)
                 {
-                    Log.i(TAG,"too much");
+                    //Log.i(TAG,"too much");
                     cur_time=System.currentTimeMillis();
                     too_much_time=System.currentTimeMillis();
                     too_much_flag=true;

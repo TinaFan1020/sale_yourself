@@ -120,6 +120,7 @@ public class Operations {
 	public String hmmGetWordFromFile(File speechFile) throws Exception {
 		// extract features
 		FeatureVector feature = extractFeatureFromFile(speechFile);
+		System.out.println("hmm feature success");
 		return hmmGetWordWithFeature(feature);
 	}
 
@@ -206,7 +207,9 @@ public class Operations {
 	 */
 	private FeatureVector extractFeatureFromFile(File speechFile) throws Exception {
 		float[] arrAmp;
+		System.out.println("hmm over here");
 		arrAmp = wd.extractAmplitudeFromFile(speechFile);
+		System.out.println("hmm extractAmplitudeFromFile success");
 		return extractFeatureFromExtractedAmplitureByteArray(arrAmp);
 	}
 
