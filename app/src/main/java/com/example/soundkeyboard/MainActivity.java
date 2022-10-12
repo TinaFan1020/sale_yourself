@@ -220,11 +220,11 @@ public class MainActivity extends AppCompatActivity {
     //llap zone
 
     int cnt = 0;
-    double[] toTransform,toTransform_2ch;//用來放要拿去fftㄉdata
+    double[] toTransform,toTransform_2ch,toTransform_shake_only,toTransform_2ch_shake_only;//用來放要拿去fftㄉdata
     double most_freq = 0.0;//fft出來最大ㄉ頻率
     //////
     int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
-    int stroke_power_max = 180;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
+    int stroke_power_max = 220;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
     int stroke_power_min = 30;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
@@ -774,7 +774,9 @@ public class MainActivity extends AppCompatActivity {
             short[] buffer2channel = new short[bufferSize2channel];
             short[][] buffer_spilt;
             toTransform = new double[bufferSize*2];
-            toTransform_2ch = new double[bufferSize*2];//用來儲存要放進fft的資料
+            toTransform_2ch = new double[bufferSize*2];//用來儲存要放進fft的資料 且用來機器學習判斷
+            toTransform_shake_only = new double[bufferSize*2];
+            toTransform_2ch_shake_only = new double[bufferSize*2];//用來儲存要放進fft的資料 且用來機器學習判斷
             //to calculate data after fft
             double[] re;
             double[] im;
@@ -817,6 +819,8 @@ public class MainActivity extends AppCompatActivity {
                 {
                     toTransform[i]=0;
                     toTransform_2ch[i]=0;
+                    toTransform_shake_only[i]=0;
+                    toTransform_2ch_shake_only[i]=0;
                 }
                 //read data from mic and predict strokes
                 for (int i = 0; i < bufferSize; i++  ) {
@@ -878,6 +882,8 @@ public class MainActivity extends AppCompatActivity {
                  */
                 transformer.ft(toTransform);
                 transformer.ft(toTransform_2ch);
+                System.arraycopy(toTransform,0,toTransform_shake_only,0,toTransform.length);
+                System.arraycopy(toTransform_2ch,0,toTransform_2ch_shake_only,0,toTransform_2ch.length);
 
                 //do hilbert transform
                 HilbertTransform.FHT(complexBuffer, FourierTransform.Direction.Forward);
@@ -901,50 +907,52 @@ public class MainActivity extends AppCompatActivity {
                 int upper=15000;
                 toTransform=to_transform_cut_frequency(toTransform,lower,upper,frequency,fftSize);
                 toTransform_2ch=to_transform_cut_frequency(toTransform_2ch,lower,upper,frequency,fftSize);
+                toTransform_shake_only=to_transform_cut_frequency(toTransform_shake_only,lower,23800,frequency,fftSize);
+                toTransform_2ch_shake_only=to_transform_cut_frequency(toTransform_2ch_shake_only,lower,23800,frequency,fftSize);
                 /*
 
                  */
                 double[] spectrum;
                 //to calculate spectrum
-                if (toTransform.length % 2 != 0) {// if odd
-                    spectrum = new double[(toTransform.length + 1) / 2];
-                    re=new double[(toTransform.length + 1) / 2];
-                    im=new double[(toTransform.length + 1) / 2];
-                    magnitude=new double[(toTransform.length + 1) / 2];
-                    re[0]=toTransform[0];//real part of first complex fft coeffient is x[0]
+                if (toTransform_shake_only.length % 2 != 0) {// if odd
+                    spectrum = new double[(toTransform_shake_only.length + 1) / 2];
+                    re=new double[(toTransform_shake_only.length + 1) / 2];
+                    im=new double[(toTransform_shake_only.length + 1) / 2];
+                    magnitude=new double[(toTransform_shake_only.length + 1) / 2];
+                    re[0]=toTransform_shake_only[0];//real part of first complex fft coeffient is x[0]
                     im[0]=0;
                     magnitude[0]=re[0]*re[0];
-                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc component
-                    for (int index = 1; index < toTransform.length; index = index + 2) {//i=1 3 5...
+                    spectrum[0] = Math.pow(toTransform_shake_only[0] * toTransform_shake_only[0], 0.5);// dc component
+                    for (int index = 1; index < toTransform_shake_only.length; index = index + 2) {//i=1 3 5...
                         // magnitude =re*re + im*im
-                        double mag = toTransform[index] * toTransform[index]
-                                + toTransform[index + 1] * toTransform[index + 1];
-                        re[(index + 1) / 2]=toTransform[index];//when index=1 3 5... i=1 2 3..
-                        im[(index+1)/2]=toTransform[index+1];//index=2 4 6...i=1 2 3..
+                        double mag = toTransform_shake_only[index] * toTransform_shake_only[index]
+                                + toTransform_shake_only[index + 1] * toTransform_shake_only[index + 1];
+                        re[(index + 1) / 2]=toTransform_shake_only[index];//when index=1 3 5... i=1 2 3..
+                        im[(index+1)/2]=toTransform_shake_only[index+1];//index=2 4 6...i=1 2 3..
                         magnitude[(index+1)/2]=Math.sqrt(mag);
                         spectrum[(index + 1) / 2] = Math.pow(mag, 0.5);
                     }
                 } else {// if even
-                    spectrum = new double[toTransform.length / 2 + 1];
-                    re=new double[toTransform.length / 2 + 1];
-                    im=new double[toTransform.length / 2 + 1];
-                    magnitude=new double[toTransform.length / 2 + 1];
-                    re[0]=toTransform[0];//real part of first complex fft coeffient is x[0]
+                    spectrum = new double[toTransform_shake_only.length / 2 + 1];
+                    re=new double[toTransform_shake_only.length / 2 + 1];
+                    im=new double[toTransform_shake_only.length / 2 + 1];
+                    magnitude=new double[toTransform_shake_only.length / 2 + 1];
+                    re[0]=toTransform_shake_only[0];//real part of first complex fft coeffient is x[0]
                     im[0]=0;
                     magnitude[0]=re[0]*re[0];
-                    spectrum[0] = Math.pow(toTransform[0] * toTransform[0], 0.5);// dc component real only
-                    for (int index = 1; index < toTransform.length - 1; index = index + 2) {//index=1 3 5.. i=1 2 3...
+                    spectrum[0] = Math.pow(toTransform_shake_only[0] * toTransform_shake_only[0], 0.5);// dc component real only
+                    for (int index = 1; index < toTransform_shake_only.length - 1; index = index + 2) {//index=1 3 5.. i=1 2 3...
                         // magnitude =re*re + im*im
-                        double mag = toTransform[index] * toTransform[index]
-                                + toTransform[index + 1] * toTransform[index + 1];
-                        re[(index + 1) / 2]=toTransform[index];//index=1 3 5..i=1 2 3
-                        im[(index+1)/2]=toTransform[index+1];//index=2 4 6..i=1 2 3
+                        double mag = toTransform_shake_only[index] * toTransform_shake_only[index]
+                                + toTransform_shake_only[index + 1] * toTransform_shake_only[index + 1];
+                        re[(index + 1) / 2]=toTransform_shake_only[index];//index=1 3 5..i=1 2 3
+                        im[(index+1)/2]=toTransform_shake_only[index+1];//index=2 4 6..i=1 2 3
                         magnitude[(index+1)/2]=Math.sqrt(mag);
                         spectrum[(index + 1) / 2] = Math.pow(mag, 0.5);
                     }
-                    spectrum[spectrum.length - 1] = Math.pow(toTransform[toTransform.length - 1]
-                            * toTransform[toTransform.length - 1], 0.5);
-                    re[re.length - 1]=toTransform[toTransform.length - 1];
+                    spectrum[spectrum.length - 1] = Math.pow(toTransform_shake_only[toTransform_shake_only.length - 1]
+                            * toTransform_shake_only[toTransform_shake_only.length - 1], 0.5);
+                    re[re.length - 1]=toTransform_shake_only[toTransform_shake_only.length - 1];
                     im[im.length-1]=0;
                     magnitude[magnitude.length-1]=Math.sqrt(re[re.length - 1]*re[re.length - 1]);
                 }
@@ -954,6 +962,8 @@ public class MainActivity extends AppCompatActivity {
                 //do inverse fft
                 transformer.bt(toTransform);
                 transformer.bt(toTransform_2ch);
+                transformer.bt(toTransform_shake_only);
+                transformer.bt(toTransform_2ch_shake_only);
 
                 int tmp_stat=0;
 
@@ -995,11 +1005,11 @@ public class MainActivity extends AppCompatActivity {
 
                         File test_stroke_file = new File(getExternalCacheDir().getAbsolutePath() + "/stroke_tmp_2ch.wav");
                         System.out.println("mytag"+test_stroke_file.getPath());
-                        String test_result = opr.hmmGetWordFromFile(test_stroke_file);
+                        //String test_result = opr.hmmGetWordFromFile(test_stroke_file);
                         //String test_label_path = Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath() + "//SoundKeyboard_TrainWav//4" +"/cache2022-10-08T151829.394audio_fft.wav";
                         //File test_label = new File(test_label_path);
                         //String test_result = opr.hmmGetWordFromFile(test_label);
-                        System.out.println("test_result = "+ test_result);
+                       // System.out.println("test_result = "+ test_result);
                         //txt_out.setText(test_result);
                         //Log.i("test_result",test_result);
                     }
@@ -1015,20 +1025,20 @@ public class MainActivity extends AppCompatActivity {
                 for(int i=0;i<bufferSize;i++)
                 {
                     lastpos=ispos;
-                    if(toTransform[i]>0) {ispos=1;pos_total_local+=toTransform[i];pos_cnt_local++;pos_cnt_global++;pos_total_global+=toTransform[i];}
-                    if(toTransform[i]==0) ispos=ispos;
-                    if(toTransform[i]<0) {ispos=-1;neg_total_local+=toTransform[i];}
+                    if(toTransform_shake_only[i]>0) {ispos=1;pos_total_local+=toTransform_shake_only[i];pos_cnt_local++;pos_cnt_global++;pos_total_global+=toTransform_shake_only[i];}
+                    if(toTransform_shake_only[i]==0) ispos=ispos;
+                    if(toTransform_shake_only[i]<0) {ispos=-1;neg_total_local+=toTransform_shake_only[i];}
 
                     if(lastpos!=ispos) zerocross++;
 
                     audio_cnt_global++;
                     audio_cnt_local++;
-                    audio_avg_global+=(toTransform[i]-audio_avg_global)/audio_cnt_global;
-                    audio_avg_local+=(toTransform[i]-audio_avg_local)/audio_cnt_local;
-                    audio_total+=toTransform[i];
-                    if(toTransform[i]==0) localzeros++;
-                    if(localmax<toTransform[i]) localmax=(int)toTransform[i];
-                    if(localmin>toTransform[i]) localmin=(int)toTransform[i];
+                    audio_avg_global+=(toTransform_shake_only[i]-audio_avg_global)/audio_cnt_global;
+                    audio_avg_local+=(toTransform_shake_only[i]-audio_avg_local)/audio_cnt_local;
+                    audio_total+=toTransform_shake_only[i];
+                    if(toTransform_shake_only[i]==0) localzeros++;
+                    if(localmax<toTransform_shake_only[i]) localmax=(int)toTransform_shake_only[i];
+                    if(localmin>toTransform_shake_only[i]) localmin=(int)toTransform_shake_only[i];
 
                 }
                 pos_avg_local=(double)pos_total_local/(double)pos_cnt_local;
@@ -1104,12 +1114,12 @@ public class MainActivity extends AppCompatActivity {
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
                     {
                         stroke_detected=false;
-                       // Log.i(TAG,"fake stroke detected no shake!!");
+                        Log.i(TAG,"fake stroke detected no shake!!");
                     }
                     else if(pos_avg_local<=stroke_power_min&&gravity_flag==true &&triggered_flag==false)
                     {
                         stroke_detected=false;
-                        //Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+                        Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
 
                     }
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
