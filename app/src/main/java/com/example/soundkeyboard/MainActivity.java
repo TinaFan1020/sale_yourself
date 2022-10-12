@@ -224,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
     double most_freq = 0.0;//fft出來最大ㄉ頻率
     //////
     int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
-    int stroke_power_max = 220;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
+    int stroke_power_max = 330;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
     int stroke_power_min = 30;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
@@ -1765,7 +1765,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                 //Log.i("gravitytmp","dx "+Math.abs(dx)+"  dy  "+Math.abs(dy));
-                if(Math.abs(dx)>0.00006*100000&&Math.abs(dy)>0.00006*100000&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
+                if((Math.abs(dx)>0.00006*100000||Math.abs(dy)>0.00006*100000)&&Math.abs(dx)<0.002*100000&&Math.abs(dy)<0.002*100000)
                 {
                     if(gravity_flag==true)
                     {
