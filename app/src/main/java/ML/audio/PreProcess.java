@@ -39,18 +39,17 @@ public class PreProcess {
 
 		normalizePCM( );
 		epd = new EndPointDetection( this.originalSignal, this.samplingRate );
-		System.out.println(originalSignal.length+" originalSignal.length ");
 		afterEndPtDetection = epd.doEndPointDetection( );
-		System.out.println(afterEndPtDetection.length+" afterEndPtDetection.length ");
 		// ArrayWriter.printFloatArrayToFile(afterEndPtDetection, "endPt.txt");
 		//todo jump
 		check_frame = doFraming( );
-
-		System.out.println("check_frame_in_pre" + check_frame);
+		//jump_frame();
+		//System.out.println("check_frame_in_pre" + check_frame);
 		if (check_frame > -1) {doWindowing( );}
 	}
+
 	public int jump_frame(){
-		System.out.println("check_frame_in_jump_frame" + check_frame);
+		//System.out.println("check_frame_in_jump_frame" + check_frame);
 		return check_frame;
 	}
 

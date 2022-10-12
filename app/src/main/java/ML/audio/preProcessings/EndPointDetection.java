@@ -14,7 +14,6 @@ public class EndPointDetection {
     public EndPointDetection(float[] originalSignal, int samplingRate) {
         this.originalSignal = originalSignal;
         samplePerFrame = samplingRate / 1000;
-        System.out.println(samplingRate+" samplingRate " + samplePerFrame + " samplPerFrame ");
 
         firstSamples = samplePerFrame * 200;// according to formula
     }

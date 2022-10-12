@@ -1005,11 +1005,15 @@ public class MainActivity extends AppCompatActivity {
 
                         File test_stroke_file = new File(getExternalCacheDir().getAbsolutePath() + "/stroke_tmp_2ch.wav");
                         System.out.println("mytag"+test_stroke_file.getPath());
-                        //String test_result = opr.hmmGetWordFromFile(test_stroke_file);
+                        String test_result = opr.hmmGetWordFromFile(test_stroke_file);
+                        if(test_result==null) {
+                            Log.i("TAG", "continue");
+                            continue;
+                        }
                         //String test_label_path = Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath() + "//SoundKeyboard_TrainWav//4" +"/cache2022-10-08T151829.394audio_fft.wav";
                         //File test_label = new File(test_label_path);
                         //String test_result = opr.hmmGetWordFromFile(test_label);
-                       // System.out.println("test_result = "+ test_result);
+                        System.out.println("test_result = "+ test_result);
                         //txt_out.setText(test_result);
                         //Log.i("test_result",test_result);
                     }
@@ -1114,12 +1118,12 @@ public class MainActivity extends AppCompatActivity {
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected no shake!!");
+                       // Log.i(TAG,"fake stroke detected no shake!!");
                     }
                     else if(pos_avg_local<=stroke_power_min&&gravity_flag==true &&triggered_flag==false)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
+                        //Log.i(TAG,"fake stroke detected too less sound"+pos_avg_local);
 
                     }
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)

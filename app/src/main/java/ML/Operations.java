@@ -118,10 +118,12 @@ public class Operations {
 	}
 
 	public String hmmGetWordFromFile(File speechFile) throws Exception {
-		// extract features
+		// todo extract features
 		FeatureVector feature = extractFeatureFromFile(speechFile);
-		System.out.println("hmm feature success");
-		return hmmGetWordWithFeature(feature);
+		if (feature!= null){
+			return hmmGetWordWithFeature(feature);
+		}
+		return null;
 	}
 
 	public String hmmGetWordFromFileByteArray(byte[] byteArray) throws Exception {
@@ -195,12 +197,17 @@ public class Operations {
 	public FeatureVector extractFeatureFromExtractedAmplitureByteArray(float[] arrAmp) {
 		int check_frame = 0;
 		prp = new PreProcess(arrAmp, samplePerFrame, samplingRate);
-		System.out.println("check_frame " + check_frame);
 		//todo jump_catch
-		//int i = new jump_frame();
-		fExt = new FeatureExtract(prp.framedSignal, samplingRate, samplePerFrame);
-		fExt.makeMfccFeatureVector();
-		return fExt.getFeatureVector();
+		check_frame = prp.jump_frame();
+		System.out.println("check_frame " + check_frame);
+		if(check_frame > -1){
+			fExt = new FeatureExtract(prp.framedSignal, samplingRate, samplePerFrame);
+			fExt.makeMfccFeatureVector();
+			return fExt.getFeatureVector();
+		}
+		else{
+			return null;
+		}
 	}
 
 	/**
@@ -213,8 +220,10 @@ public class Operations {
 		float[] arrAmp;
 		//System.out.println("hmm over here");
 		arrAmp = wd.extractAmplitudeFromFile(speechFile);
-		//System.out.println("hmm extractAmplitudeFromFile success");
-		return extractFeatureFromExtractedAmplitureByteArray(arrAmp);
+		//todo extractFeatureFromExtractedAmplitureByteArray
+		FeatureVector extract =  extractFeatureFromExtractedAmplitureByteArray(arrAmp);
+		System.out.println("extract = "+ extract);
+		return extract;
 	}
 
 	/**
