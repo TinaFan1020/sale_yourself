@@ -220,6 +220,8 @@ public class MainActivity extends AppCompatActivity {
     private double lastx=0,lasty,changex=0,changey=0;//避免距離突然增加，計算與前次的相對距離
 
     private double displaydis = 0;
+
+    boolean write_dis=true;
     //llap zone
 
     int cnt = 0;
@@ -227,11 +229,11 @@ public class MainActivity extends AppCompatActivity {
     double most_freq = 0.0;//fft出來最大ㄉ頻率
     //////
     int quite_avg = 90;//todo:暫時用強行設定 等開始寫預先訓練步驟時要求使用者安靜5秒來測定背景音量
-    int stroke_power_max = 330;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
+    int stroke_power_max = 600;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以壓制比按鍵大的聲音
     int stroke_power_min = 30;//todo:暫時用強行設定 之後寫預先訓練步驟時測定按鍵按下強度 用以偵測按鍵發生的最下限
     //todo:之後測試標準差以及變異數對於偵測的效用
     /////
-    File file,file_org,file_org_2ch,file_2ch,file_baseband_txt;
+    File file,file_org,file_org_2ch,file_2ch,file_baseband_txt,file_dis0,file_dis1,file_dis2,file_dis3,file_dis4,file_dis5,file_dis6,file_dis7,file_dis8;
     int dowindow=1;//用來開關window func 1是開 0是關
     int dodraw=0; //用來切換畫畫模式 0是spectrum 1是原data 2是i/q signal
     PerfectTune perfectTune = new PerfectTune();
@@ -1115,7 +1117,7 @@ public class MainActivity extends AppCompatActivity {
                 if(stroke_state==0)
                 {
 
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0&&gravity_flag==true&&too_much_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&triggered_flag==false&&gravity_flag==true&&too_much_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -2017,6 +2019,15 @@ private Handler updateviews =new Handler()
             long current_time=-1;
             long last_time=-1;
             FileWriter fwriter = null;
+            FileWriter fdiswriter0 = null;
+            FileWriter fdiswriter1 = null;
+            FileWriter fdiswriter2 = null;
+            FileWriter fdiswriter3 = null;
+            FileWriter fdiswriter4 = null;
+            FileWriter fdiswriter5 = null;
+            FileWriter fdiswriter6 = null;
+            FileWriter fdiswriter7 = null;
+            FileWriter fdiswriter8 = null;
 
             try {//try to create txt
                 file_baseband_txt=new File(getExternalCacheDir().getAbsolutePath()+"/baseband_data.txt");
@@ -2024,14 +2035,69 @@ private Handler updateviews =new Handler()
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            if(write_dis)
+            {
+                try {//try to create txt
+                    file_dis0=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data0.txt");
+                    fdiswriter0=new FileWriter(file_dis0,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis1=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data1.txt");
+                    fdiswriter1=new FileWriter(file_dis1,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis2=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data2.txt");
+                    fdiswriter2=new FileWriter(file_dis2,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis3=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data3.txt");
+                    fdiswriter3=new FileWriter(file_dis3,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis4=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data4.txt");
+                    fdiswriter4=new FileWriter(file_dis4,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis5=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data5.txt");
+                    fdiswriter5=new FileWriter(file_dis5,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis6=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data6.txt");
+                    fdiswriter6=new FileWriter(file_dis6,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis7=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data7.txt");
+                    fdiswriter7=new FileWriter(file_dis7,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {//try to create txt
+                    file_dis8=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data8.txt");
+                    fdiswriter8=new FileWriter(file_dis8,true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
 
 
             while (blnPlayRecord == false) {
             }
             llap_audioRecord.startRecording();
-            /*
-             *
-             */
+
             long lasttime=0,nowtime=0,stroke_detect_time=0,mystarttime=0,endttime=0;
             int loop_cnt=0;
             double stroke_dc_tot=0.0;
@@ -2042,9 +2108,7 @@ private Handler updateviews =new Handler()
             double recent_ndc_tot[]=new double[precatch_size];
             int recent_tot_ptr=0;
             while (blnPlayRecord) {
-                /*
-                 *
-                 */
+
                 if(mystarttime==0) mystarttime=System.currentTimeMillis();
 
                 int line = llap_audioRecord.read(bsRecord, 0, frameSize * 2);
@@ -2314,6 +2378,16 @@ private Handler updateviews =new Handler()
                                 tmp_sectiony += disy / 10;
                                 firststroke_cnt++;
                                 last_time=System.currentTimeMillis();
+
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter0.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+
                             }
                             else if (initstroke_cnt == 0&&firststroke_cnt == 1) {
                                 Log.i("TAG", "請敲擊右下角");
@@ -2324,6 +2398,14 @@ private Handler updateviews =new Handler()
                                 tmp_sectiony += disy / 10;
                                 firststroke_cnt++;
                                 last_time=System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter0.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             else if (initstroke_cnt == 0&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
@@ -2338,6 +2420,16 @@ private Handler updateviews =new Handler()
                                 disx=micdis1;
                                 disy=micdis2;
                                 last_time=System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter0.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                        fdiswriter0.flush();
+                                        fdiswriter0.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
 
                             else if (initstroke_cnt == 1&&firststroke_cnt ==0) {
@@ -2354,6 +2446,16 @@ private Handler updateviews =new Handler()
                                    //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time=System.currentTimeMillis();
+
+
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter1.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             else if (initstroke_cnt == 1&&firststroke_cnt ==1) {
                                 Log.i("TAG", "請敲擊右上角");
@@ -2369,6 +2471,14 @@ private Handler updateviews =new Handler()
                                 //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time=System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter1.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             else if (initstroke_cnt == 1&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
@@ -2383,6 +2493,16 @@ private Handler updateviews =new Handler()
                                 disx=micdis1;
                                 disy=micdis2;
                                 last_time=System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter1.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                        fdiswriter1.flush();
+                                        fdiswriter1.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
 
                             else if (initstroke_cnt == 2&&firststroke_cnt ==0) {
@@ -2399,6 +2519,14 @@ private Handler updateviews =new Handler()
                                     //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time = System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter2.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             else if (initstroke_cnt == 2&&firststroke_cnt ==1) {
                                 Log.i("TAG", "請敲擊左上角");
@@ -2414,6 +2542,14 @@ private Handler updateviews =new Handler()
                                 //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time = System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter2.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             else if (initstroke_cnt == 2&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
@@ -2426,6 +2562,16 @@ private Handler updateviews =new Handler()
                                 tmp_sectiony = 0;
                                 last_time=System.currentTimeMillis();
                                 Log.i("TAG", "左上角敲擊完畢，換左下角");
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter2.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                        fdiswriter2.flush();
+                                        fdiswriter2.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
 
                             else if (initstroke_cnt == 3&&firststroke_cnt ==0) {
@@ -2442,6 +2588,14 @@ private Handler updateviews =new Handler()
                                     //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time = System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter3.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             else if (initstroke_cnt == 3&&firststroke_cnt ==1) {
                                 Log.i("TAG", "請敲擊左下角");
@@ -2457,6 +2611,14 @@ private Handler updateviews =new Handler()
                                 //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time = System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter3.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             else if (initstroke_cnt == 3&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
@@ -2476,6 +2638,16 @@ private Handler updateviews =new Handler()
                                 disx=micdis1;
                                 disy=micdis2;
                                 last_time=System.currentTimeMillis();
+                                if(write_dis)
+                                {
+                                    try {
+                                        fdiswriter3.write((disx/10)+" "+(disy/10)+" "+"\n");
+                                        fdiswriter3.flush();
+                                        fdiswriter3.close();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                         }
                         else if(stroke_detected && !initstroke_flag){//初始化完成
