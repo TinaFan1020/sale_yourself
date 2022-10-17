@@ -99,10 +99,10 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false,hasshake=false,hasallfile=false;
-    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate;
+    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate,btn_crazy;
     ImageView imageView;//最上面畫畫ㄉ
     ImageView imageView2;//最下面顯示路徑的
-    TextView txt_out,texDistance_x,texDistance_y,absolute_disx,absolute_disy;//中間顯示字ㄉ
+    TextView txt_out,texDistance_x,texDistance_y,absolute_disx,absolute_disy,predict_text;//中間顯示字ㄉ
     Bitmap bitmap;//最上面畫畫ㄉ
     Canvas canvas;//最上面畫畫ㄉ
     Paint paint;//最上面畫畫ㄉ
@@ -196,7 +196,10 @@ public class MainActivity extends AppCompatActivity {
     private int[] trace_x = new int[1000];
     private int[] trace_y = new int[1000];
     private int trace[][]=new int[1000][3];
-    private double section[][]= new double[100][3];
+    private double first_train[][]= new double[100][3];
+    private double second_train[][]= new double[100][3];
+    private double third_train[][]= new double[100][3];
+    private double mean_train[][]= new double[100][3];
     private double[] neighbor =new double[100];
     private int tracecount = 0;
     private int twodimsioncount = 0;
@@ -248,6 +251,7 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_record = findViewById(R.id.btn_audio_record);
         btn_audio_stop = findViewById(R.id.btn_audio_end);
         btn_audio_play = findViewById(R.id.btn_audio_play);
+        btn_crazy= findViewById(R.id.btn_crazy);
         btn_toggle_window = findViewById(R.id.btn_toggle_window);
         btn_play_frequency = findViewById(R.id.btn_play_frequency);
         btn_stop_frequency = findViewById(R.id.btn_stop_frequency);
@@ -259,10 +263,12 @@ public class MainActivity extends AppCompatActivity {
         btn_generate=findViewById(R.id.btn_generate);
         frequency_text = findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
+        predict_text=findViewById(R.id.predict_text);
         texDistance_x=findViewById(R.id.text_disatnce_x);
         texDistance_y=findViewById(R.id.text_distance_y);
         absolute_disx=findViewById(R.id.text_absolute_disx);
         absolute_disy=findViewById(R.id.text_absolute_disy);
+        btn_crazy.setOnClickListener(v -> onclick_crazy_button());
         btn_audio_record.setOnClickListener(v -> onclick_audio_start());
         btn_audio_stop.setOnClickListener(v -> onclick_audio_stop());
         btn_audio_play.setOnClickListener(v -> onclick_audio_play());
@@ -299,7 +305,13 @@ public class MainActivity extends AppCompatActivity {
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         sensor_gravity = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-
+        btn_toggle_window.setVisibility(View.INVISIBLE);
+        btn_audio_play.setVisibility(View.INVISIBLE);
+        btn_toggle_draw.setVisibility(View.INVISIBLE);
+        imageView.setVisibility(View.INVISIBLE);
+        imageView2.setVisibility(View.INVISIBLE);
+        texDistance_x.setVisibility(View.INVISIBLE);
+        texDistance_y.setVisibility(View.INVISIBLE);
         HMM_VQ_Speech_Recognition HMM = new HMM_VQ_Speech_Recognition( );
 
         //String testc=testcc('c');
@@ -397,6 +409,15 @@ public class MainActivity extends AppCompatActivity {
 
         //llap zone
 
+    }
+    private void stoke_training(){
+
+    }
+
+    private void onclick_crazy_button() {
+        disx=micdis1;
+        disy=micdis2;
+        return;
     }
 
     private void onclick_train() {
@@ -1094,7 +1115,7 @@ public class MainActivity extends AppCompatActivity {
                 if(stroke_state==0)
                 {
 
-                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0&&gravity_flag==true&&too_much_flag==false&&protago_flag==true)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
+                    if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&triggered_flag==false&&shake_triggered==false&&retrigger_flag==0&&gravity_flag==true&&too_much_flag==false)//push前要加回來&&shake_triggered==false&&retrigger_flag==0
                     {
 
                         stroke_cnt++;
@@ -2277,15 +2298,28 @@ private Handler updateviews =new Handler()
                         //Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
                         tracecount++;
 
+
                         //敲擊實驗開始
                         /**/
                     //實驗五 : 敲擊+方向判斷，先敲擊四個頂點，順序為右下、右上、左上、左下(左邊為離手機較遠那側)
                     current_time=System.currentTimeMillis();
                     if(current_time-last_time>500) {
                         if(stroke_detected && initstroke_flag && initstroke_cnt < 4){//還沒初始化
-                            if (initstroke_cnt == 0&&firststroke_cnt < 2) {
+                            if (initstroke_cnt == 0&&firststroke_cnt == 0) {
                                 Log.i("TAG", "請敲擊右下角");
                                 Log.i("TAG", "stroke disx= " + disx / 10 + " disy= " + disy / 10);
+                                first_train[0][1]=disx / 10;
+                                first_train[0][2]=disy / 10;
+                                tmp_sectionx += disx / 10;
+                                tmp_sectiony += disy / 10;
+                                firststroke_cnt++;
+                                last_time=System.currentTimeMillis();
+                            }
+                            else if (initstroke_cnt == 0&&firststroke_cnt == 1) {
+                                Log.i("TAG", "請敲擊右下角");
+                                Log.i("TAG", "stroke disx= " + disx / 10 + " disy= " + disy / 10);
+                                second_train[0][1]=disx / 10;
+                                second_train[0][2]=disy / 10;
                                 tmp_sectionx += disx / 10;
                                 tmp_sectiony += disy / 10;
                                 firststroke_cnt++;
@@ -2294,170 +2328,233 @@ private Handler updateviews =new Handler()
                             else if (initstroke_cnt == 0&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
                                 initstroke_cnt++;
-                                section[0][1] = tmp_sectionx / 2;
-                                section[0][2] = tmp_sectiony / 2;
+                                mean_train[0][1] = tmp_sectionx / 2;
+                                mean_train[0][2] = tmp_sectiony / 2;
+                                third_train[0][1] = disx / 10;
+                                third_train[0][2] = disy / 10;
                                 tmp_sectionx = 0;
                                 tmp_sectiony = 0;
                                 Log.i("TAG", "右下角敲擊完畢，換右上角");
+                                disx=micdis1;
+                                disy=micdis2;
                                 last_time=System.currentTimeMillis();
                             }
 
-                            else if (initstroke_cnt == 1&&firststroke_cnt < 2) {
+                            else if (initstroke_cnt == 1&&firststroke_cnt ==0) {
                                 Log.i("TAG", "請敲擊右上角");
                                 Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
                                 //if(section[0][1]-disx/10>=2) {
-                                    tmp_sectionx += disx / 10;
-                                    tmp_sectiony += disy / 10;
-                                    firststroke_cnt++;
+                                first_train[1][1]=disx / 10;
+                                first_train[1][2]=disy / 10;
+                                tmp_sectionx += disx / 10;
+                                tmp_sectiony += disy / 10;
+                                firststroke_cnt++;
                                 //}
                                 //else{
                                    //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time=System.currentTimeMillis();
                             }
+                            else if (initstroke_cnt == 1&&firststroke_cnt ==1) {
+                                Log.i("TAG", "請敲擊右上角");
+                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
+                                //if(section[0][1]-disx/10>=2) {
+                                second_train[1][1]=disx / 10;
+                                second_train[1][2]=disy / 10;
+                                tmp_sectionx += disx / 10;
+                                tmp_sectiony += disy / 10;
+                                firststroke_cnt++;
+                                //}
+                                //else{
+                                //Log.i("TAG","stroke 請重新移動");
+                                //}
+                                last_time=System.currentTimeMillis();
+                            }
                             else if (initstroke_cnt == 1&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
                                 initstroke_cnt++;
-                                section[1][1] = tmp_sectionx / 2;
-                                section[1][2] = tmp_sectiony / 2;
+                                mean_train[1][1] = tmp_sectionx / 2;
+                                mean_train[1][2] = tmp_sectionx / 2;
+                                third_train[1][1] = disx / 10;
+                                third_train[1][2] = disy / 10;
                                 tmp_sectionx = 0;
                                 tmp_sectiony = 0;
                                 Log.i("TAG", "右上角敲擊完畢，換左上角");
+                                disx=micdis1;
+                                disy=micdis2;
                                 last_time=System.currentTimeMillis();
                             }
 
-                            else if (initstroke_cnt == 2&&firststroke_cnt < 2) {
+                            else if (initstroke_cnt == 2&&firststroke_cnt ==0) {
                                 Log.i("TAG", "請敲擊左上角");
                                 Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
                                 //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
-                                    tmp_sectionx += disx / 10;
-                                    tmp_sectiony += disy / 10;
-                                    firststroke_cnt++;
+                                first_train[2][1]=disx / 10;
+                                first_train[2][2]=disy / 10;
+                                tmp_sectionx += disx / 10;
+                                tmp_sectiony += disy / 10;
+                                firststroke_cnt++;
                                // }
                                 //else{
                                     //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time = System.currentTimeMillis();
                             }
+                            else if (initstroke_cnt == 2&&firststroke_cnt ==1) {
+                                Log.i("TAG", "請敲擊左上角");
+                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
+                                //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
+                                second_train[2][1]=disx / 10;
+                                second_train[2][2]=disy / 10;
+                                tmp_sectionx += disx / 10;
+                                tmp_sectiony += disy / 10;
+                                firststroke_cnt++;
+                                // }
+                                //else{
+                                //Log.i("TAG","stroke 請重新移動");
+                                //}
+                                last_time = System.currentTimeMillis();
+                            }
                             else if (initstroke_cnt == 2&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
                                 initstroke_cnt++;
-                                section[2][1] = tmp_sectionx / 2;
-                                section[2][2] = tmp_sectiony / 2;
+                                mean_train[2][1] = tmp_sectionx / 2;
+                                mean_train[2][2] = tmp_sectiony / 2;
+                                third_train[2][1] = disx / 10;
+                                third_train[2][2] = disy / 10;
                                 tmp_sectionx = 0;
                                 tmp_sectiony = 0;
                                 last_time=System.currentTimeMillis();
                                 Log.i("TAG", "左上角敲擊完畢，換左下角");
                             }
 
-                            else if (initstroke_cnt == 3&&firststroke_cnt < 2) {
+                            else if (initstroke_cnt == 3&&firststroke_cnt ==0) {
                                 Log.i("TAG", "請敲擊左下角");
                                 Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
                                 //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
-                                    tmp_sectionx += disx / 10;
-                                    tmp_sectiony += disy / 10;
-                                    firststroke_cnt++;
+                                first_train[3][1]=disx / 10;
+                                first_train[3][2]=disy / 10;
+                                tmp_sectionx += disx / 10;
+                                tmp_sectiony += disy / 10;
+                                firststroke_cnt++;
                                 //}
                                 //else{
                                     //Log.i("TAG","stroke 請重新移動");
                                 //}
                                 last_time = System.currentTimeMillis();
                             }
+                            else if (initstroke_cnt == 3&&firststroke_cnt ==1) {
+                                Log.i("TAG", "請敲擊左下角");
+                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
+                                //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
+                                second_train[3][1]=disx / 10;
+                                second_train[3][2]=disy / 10;
+                                tmp_sectionx += disx / 10;
+                                tmp_sectiony += disy / 10;
+                                firststroke_cnt++;
+                                //}
+                                //else{
+                                //Log.i("TAG","stroke 請重新移動");
+                                //}
+                                last_time = System.currentTimeMillis();
+                            }
                             else if (initstroke_cnt == 3&&firststroke_cnt == 2) {
                                 firststroke_cnt = 0;
                                 initstroke_cnt++;
-                                section[3][1] = tmp_sectionx / 2;
-                                section[3][2] = tmp_sectiony / 2;
+                                mean_train[3][1] = tmp_sectionx / 2;
+                                mean_train[3][2] = tmp_sectiony / 2;
+                                third_train[3][1]=disx / 10;
+                                third_train[3][2]=disy / 10;
                                 tmp_sectionx = 0;
                                 tmp_sectiony = 0;
                                 initstroke_flag = false;
                                 Log.i("TAG", "左下角敲擊完畢");
-                                Log.i("TAG","stroke 右下角為 x= "+section[0][1]+"y= "+section[0][2]);
-                                Log.i("TAG","stroke 右上角為 x= "+section[1][1]+"y= "+section[1][2]);
-                                Log.i("TAG","stroke 左上角為 x= "+section[2][1]+"y= "+section[2][2]);
-                                Log.i("TAG","stroke 左下角為 x= "+section[3][1]+"y= "+section[3][2]);
+                                Log.i("TAG","stroke 右下角為 x= "+mean_train[0][1]+"y= "+mean_train[0][2]);
+                                Log.i("TAG","stroke 右上角為 x= "+mean_train[1][1]+"y= "+mean_train[1][2]);
+                                Log.i("TAG","stroke 左上角為 x= "+mean_train[2][1]+"y= "+mean_train[2][2]);
+                                Log.i("TAG","stroke 左下角為 x= "+mean_train[3][1]+"y= "+mean_train[3][2]);
+                                disx=micdis1;
+                                disy=micdis2;
                                 last_time=System.currentTimeMillis();
                             }
                         }
                         else if(stroke_detected && !initstroke_flag){//初始化完成
-                            //方法一:中間線判斷
-                            /*
-                            Log.i(TAG, "stroke input point x=" + disx/10 + "y= " + disy/10);
-                            double input_pointx = disx/10;
-                            double input_pointy = disy/10;
-                            section[0][1]+=1;
-                            section[0][2]+=1;
-                            //section[1][1]-=1;
-                            //section[1][2]-=1;
-                            //section[2][1]+=1;
-                            //section[2][2]+=1;
-                            //section[3][1]-=1;
-                            //section[3][2]-=1;
-                            double leftrightmidbound=(section[1][1]+section[2][1])/2;
-
-                            double updownmidbound=(section[0][1]+section[1][1])/2;
-                            double updownmidbound2=(section[0][2]+section[1][2])/2;//靠右的用y判斷
-                            double updownmidbound3=(section[2][2]+section[3][2])/2;//靠左的用y判斷
-                            if(input_pointx>=leftrightmidbound){
-                                Log.i(TAG,"stroke in left section");
-                                if(input_pointy>=updownmidbound3||input_pointy>=updownmidbound2){
-                                    Log.i(TAG,"stroke in down section");
-                                }
-                                else{
-                                    Log.i(TAG,"stroke in up section");
-                                }
-                            }
-                            else if(input_pointx<leftrightmidbound){
-                                Log.i(TAG,"stroke in right section");
-                                if(input_pointx<section[1][1]){//x有問題所以用y判斷
-                                    if(input_pointy<=updownmidbound2){
-                                        Log.i(TAG,"stroke in up section");
-                                    }
-                                    else{
-                                        Log.i(TAG,"stroke in down section");
-                                    }
-                                }
-                                else{
-                                    if(input_pointx<=updownmidbound-1){
-                                        Log.i(TAG,"stroke in up section");
-                                    }
-                                    else{
-                                        Log.i(TAG,"stroke in down section");
-                                    }
-                                }
-                            }
-                            if(input_pointx<section[0][1]&&input_pointx>section[1][1]&&input_pointx<section[2][1]&&input_pointx<section[3][1]){
-                                Log.i(TAG,"stroke in section");
-                                error_cnt=0;
-                            }
-                            else {
-                                Log.i(TAG,"stroke not in");
-                                error_cnt++;
-                                if(error_cnt==6){
-                                    initstroke_flag=true;
-                                    initstroke_cnt=0;
-                                    Log.i("TAG","Stroke 重新開始");
-                                }
-
-
-
-                            }*/
-
                             //方法二:近鄰演算法
                             Log.i(TAG, "stroke input point x=" + disx/10 + "y= " + disy/10);
                             double input_pointx = disx/10;
                             double input_pointy = disy/10;
+                            double sumProductx =0;
+                            double sumProducty=0;
+                            double sumAxSq = 0;//A為input B為train
+                            double sumAySq = 0;//A為input B為train
+                            double sumBxSq = 0;
+                            double sumBySq = 0;
                             int nearest=0;
                             for(int i=0;i<4;i++){
-                                neighbor[i]=Math.sqrt(Math.pow(input_pointx-section[i][1],2)+Math.pow(input_pointy-section[i][2],2));
+                                /*歐幾里得距離*/
+                                neighbor[i]+=Math.sqrt(Math.pow(input_pointx-first_train[i][1],2)+Math.pow(input_pointy-first_train[i][2],2));
+                                neighbor[i]+=Math.sqrt(Math.pow(input_pointx-second_train[i][1],2)+Math.pow(input_pointy-second_train[i][2],2));
+                                neighbor[i]+=Math.sqrt(Math.pow(input_pointx-third_train[i][1],2)+Math.pow(input_pointy-third_train[i][2],2));
+                                neighbor[i]+=Math.sqrt(Math.pow(input_pointx-mean_train[i][1],2)+Math.pow(input_pointy-mean_train[i][2],2));
+
+                                /*曼哈頓距離
+                                neighbor[i]+=Math.abs(input_pointx-first_train[i][1])+Math.abs(input_pointx-first_train[i][2]);
+                                neighbor[i]+=Math.abs(input_pointx-second_train[i][1])+Math.abs(input_pointx-second_train[i][2]);
+                                neighbor[i]+=Math.abs(input_pointx-third_train[i][1])+Math.abs(input_pointx-third_train[i][2]);
+                                neighbor[i]+=Math.abs(input_pointx-mean_train[i][1])+Math.abs(input_pointx-mean_train[i][2]);
+
+                                 */
+
+                                /*SSD
+                                neighbor[i]+=Math.pow(input_pointx-first_train[i][1],2)+Math.pow(input_pointx-first_train[i][2],2);
+                                neighbor[i]+=Math.pow(input_pointx-second_train[i][1],2)+Math.pow(input_pointx-second_train[i][2],2);
+                                neighbor[i]+=Math.pow(input_pointx-third_train[i][1],2)+Math.pow(input_pointx-third_train[i][2],2);
+                                neighbor[i]+=Math.pow(input_pointx-mean_train[i][1],2)+Math.pow(input_pointx-mean_train[i][2],2);
+``
+                                 */
+                                /*cosine similarity
+                                sumProductx = input_pointx*first_train[i][1];
+                                sumProducty = input_pointy*first_train[i][2];
+                                sumAxSq= input_pointx*input_pointx;
+                                sumAySq = input_pointy*input_pointy;
+                                sumBxSq = first_train[i][1]*first_train[i][1];
+                                sumBySq = first_train[i][2]*first_train[i][2];
+                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
+                                sumProductx = input_pointx*second_train[i][1];
+                                sumProducty = input_pointy*second_train[i][2];
+                                sumAxSq = input_pointx*input_pointx;
+                                sumAySq = input_pointy*input_pointy;
+                                sumBxSq = second_train[i][1]*second_train[i][1];
+                                sumBySq = second_train[i][2]*second_train[i][2];
+                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
+                                sumProductx = input_pointx*third_train[i][1];
+                                sumProducty = input_pointy*third_train[i][2];
+                                sumAxSq = input_pointx*input_pointx;
+                                sumAySq = input_pointy*input_pointy;
+                                sumBxSq = third_train[i][1]*third_train[i][1];
+                                sumBySq = third_train[i][2]*third_train[i][2];
+                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
+                                sumProductx = input_pointx*mean_train[i][1];
+                                sumProducty = input_pointy*mean_train[i][2];
+                                sumAxSq = input_pointx*input_pointx;
+                                sumAySq = input_pointy*input_pointy;
+                                sumBxSq = mean_train[i][1]*mean_train[i][1];
+                                sumBySq = mean_train[i][2]*mean_train[i][2];
+                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
+
+                                 */
                             }
-                            for(int i=1;i<4;i++){
+                            for(int i=0;i<4;i++){
                                 if(neighbor[nearest]>neighbor[i]){
                                     nearest=i;
                                 }
                             }
+                            for(int i=0;i<4;i++){
+                                neighbor[i]=0;
+                            }
                             nearest+=1;
                             Log.i("TAG","Stroke 預測按鍵數字為: "+nearest);
+                            //predict_text.setText("預測按鍵為: "+nearest);
                             last_time=System.currentTimeMillis();
                         }
                     }

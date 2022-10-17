@@ -4,4 +4,6 @@
     <string name="start_play">Start Play</string>
     <string name="stop_play">Stop Play</string>
     <string name="please_enter_the_frequency">please enter the frequency</string>
+    <string name="crazy_button">crazy_Button</string>
+    <string name="predict_text">TextView</string>
 </resources>
