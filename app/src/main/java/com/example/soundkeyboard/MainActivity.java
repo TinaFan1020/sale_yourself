@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -40,6 +41,8 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -99,7 +102,7 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false,hasshake=false,hasallfile=false;
-    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate,btn_crazy;
+    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate,btn_crazy,btn_force_train;
     ImageView imageView;//最上面畫畫ㄉ
     ImageView imageView2;//最下面顯示路徑的
     TextView txt_out,texDistance_x,texDistance_y,absolute_disx,absolute_disy,predict_text;//中間顯示字ㄉ
@@ -200,6 +203,11 @@ public class MainActivity extends AppCompatActivity {
     private double second_train[][]= new double[100][3];
     private double third_train[][]= new double[100][3];
     private double mean_train[][]= new double[100][3];
+    private double stroke_training_set[][] = new double[100][100];
+    private double stroke_training_result[][]=new double[9][];
+    private int training_set_cnt=0; //偶數為x 奇數為y
+    double tmp_sectionx=0.0;//用於section實驗的暫存器
+    double tmp_sectiony=0.0;//用於section實驗的暫存器
     private double[] neighbor =new double[100];
     private int tracecount = 0;
     private int twodimsioncount = 0;
@@ -220,8 +228,18 @@ public class MainActivity extends AppCompatActivity {
     private double lastx=0,lasty,changex=0,changey=0;//避免距離突然增加，計算與前次的相對距離
 
     private double displaydis = 0;
-
     boolean write_dis=true;
+    boolean force_train=false;
+    FileWriter fdiswriter0 = null;
+    FileWriter fdiswriter1 = null;
+    FileWriter fdiswriter2 = null;
+    FileWriter fdiswriter3 = null;
+    FileWriter fdiswriter4 = null;
+    FileWriter fdiswriter5 = null;
+    FileWriter fdiswriter6 = null;
+    FileWriter fdiswriter7 = null;
+    FileWriter fdiswriter8 = null;
+
     //llap zone
 
     int cnt = 0;
@@ -246,6 +264,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        //setContentView(R.layout.activity_main);
         Log.i(TAG, "onCreate:123");
         setContentView(R.layout.activity_main);
         checkPermission();
@@ -263,6 +284,7 @@ public class MainActivity extends AppCompatActivity {
         btn_llap_stop = findViewById(R.id.btn_llap_stop);
         btn_train=findViewById(R.id.btn_train);
         btn_generate=findViewById(R.id.btn_generate);
+        btn_force_train=findViewById(R.id.btn_force_train);
         frequency_text = findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
         predict_text=findViewById(R.id.predict_text);
@@ -340,11 +362,69 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "" + wavefreqs[0]);
         Log.i(TAG, "initialization finished at time: " + System.currentTimeMillis());
         int maxvolume=0;
+        if(write_dis)
+        {
+            try {//try to create txt
+                file_dis0=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data0.txt");
+                fdiswriter0=new FileWriter(file_dis0,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis1=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data1.txt");
+                fdiswriter1=new FileWriter(file_dis1,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis2=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data2.txt");
+                fdiswriter2=new FileWriter(file_dis2,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis3=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data3.txt");
+                fdiswriter3=new FileWriter(file_dis3,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis4=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data4.txt");
+                fdiswriter4=new FileWriter(file_dis4,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis5=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data5.txt");
+                fdiswriter5=new FileWriter(file_dis5,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis6=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data6.txt");
+                fdiswriter6=new FileWriter(file_dis6,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis7=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data7.txt");
+                fdiswriter7=new FileWriter(file_dis7,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {//try to create txt
+                file_dis8=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data8.txt");
+                fdiswriter8=new FileWriter(file_dis8,true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         btn_llap_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 btn_llap_start.setEnabled(false);
                 btn_llap_stop.setEnabled(true);
+                btn_force_train.setEnabled(false);
                 //AudioManager llap_audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
                 //llap_audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, llap_audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
                 recBufSize = AudioRecord.getMinBufferSize(sampleRateInHz,
@@ -378,6 +458,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 btn_llap_start.setEnabled(true);
                 btn_llap_stop.setEnabled(false);
+                btn_force_train.setEnabled(true);
                 isCalibrated=false;
                 blnPlayRecord=false;
                 isCalibrated=false;
@@ -408,11 +489,334 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        btn_force_train.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+               force_train=true;
+               predict_text.setText("請按LLAP做Training");
+            }
+        });
 
         //llap zone
 
     }
-    private void stoke_training(){
+    private void stroke_training(int position,int training_time,double dis1,double dis2){ //position為知道現在training第幾個按鍵 training_time為目前敲擊該按鍵第幾次
+        Log.i("TAG","stroke dis1= "+dis1+" dis2= "+dis2);
+        int real_position=position+1;
+        /* 四宮格
+        if(training_time==0){
+            first_train[position][1]=dis1;
+            first_train[position][2]=dis2;
+            tmp_sectionx +=dis1;
+            tmp_sectiony +=dis2;
+            firststroke_cnt++;
+            Log.i("TAG","請繼續敲擊第"+real_position+"按鍵");
+        }
+        else if(training_time==1){
+            second_train[position][1]=dis1;
+            second_train[position][2]=dis2;
+            tmp_sectionx +=dis1;
+            tmp_sectiony +=dis2;
+            firststroke_cnt++;
+            Log.i("TAG","請繼續敲擊第"+real_position+"按鍵");
+        }
+        else if(training_time==2){
+            firststroke_cnt=0;
+            initstroke_cnt++;
+            tmp_sectionx +=dis1;
+            tmp_sectiony +=dis2;
+            mean_train[position][1] = tmp_sectionx/3;
+            mean_train[position][2] = tmp_sectiony/3;
+            third_train[position][1] = dis1;
+            third_train[position][2] =dis2;
+            tmp_sectionx=0;
+            tmp_sectiony=0;
+            real_position++;
+            if(position==0 || position==1 ||position==3){
+                disx=micdis1;
+                disy=micdis2;
+            }
+            if(position==3){
+                initstroke_flag=false;
+                Log.i("TAG","訓練完畢，請敲擊任意按鍵");
+                Log.i("TAG","stroke 按鍵1為 x= "+mean_train[0][1]+"y= "+mean_train[0][2]);
+                Log.i("TAG","stroke 按鍵2為 x= "+mean_train[1][1]+"y= "+mean_train[1][2]);
+                Log.i("TAG","stroke 按鍵3為 x= "+mean_train[2][1]+"y= "+mean_train[2][2]);
+                Log.i("TAG","stroke 按鍵4為 x= "+mean_train[3][1]+"y= "+mean_train[3][2]);
+            }
+            else{
+                Log.i("TAG","敲擊完畢，請換第"+real_position+"按鍵");
+            }
+        }
+
+         */
+        /*九宮格*/
+        if(training_time<2){
+            stroke_training_set[position][training_set_cnt]=dis1;
+            training_set_cnt++;
+            stroke_training_set[position][training_set_cnt]=dis2;
+            training_set_cnt++;
+            tmp_sectionx +=dis1;
+            tmp_sectiony +=dis2;
+            firststroke_cnt++;
+            Log.i("TAG","請繼續敲擊第"+real_position+"按鍵");
+            Message hint=new Message();
+            hint.what=2;
+            hint.obj=real_position;
+            updateviews.sendMessage(hint);
+            if(write_dis) {
+                if (position == 0) {
+                    try {
+                        fdiswriter0.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 1) {
+                    try {
+                        fdiswriter1.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 2) {
+                    try {
+                        fdiswriter2.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 3) {
+                    try {
+                        fdiswriter3.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 4) {
+                    try {
+                        fdiswriter4.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 5) {
+                    try {
+                        fdiswriter5.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 6) {
+                    try {
+                        fdiswriter6.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 7) {
+                    try {
+                        fdiswriter7.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 8) {
+                    try {
+                        fdiswriter8.write(""+dis1+" "+dis2+"\n");
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+
+
+
+
+
+
+
+
+
+
+        }
+        else if(training_time==2){
+            firststroke_cnt=0;
+            initstroke_cnt++;
+            tmp_sectionx +=dis1;
+            tmp_sectiony +=dis2;
+            mean_train[position][1] = tmp_sectionx/3;
+            mean_train[position][2] = tmp_sectiony/3;
+            stroke_training_set[position][training_set_cnt]=dis1;
+            training_set_cnt++;
+            stroke_training_set[position][training_set_cnt]=dis2;
+            training_set_cnt++;
+            tmp_sectionx=0;
+            tmp_sectiony=0;
+            training_set_cnt=0;
+            real_position++;
+            Message hint=new Message();
+            hint.what=2;
+            hint.obj=real_position;
+            updateviews.sendMessage(hint);
+
+            if(write_dis) {
+                if (position == 0) {
+                    try {
+                        fdiswriter0.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter0.flush();
+                        fdiswriter0.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 1) {
+                    try {
+                        fdiswriter1.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter1.flush();
+                        fdiswriter1.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 2) {
+                    try {
+                        fdiswriter2.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter2.flush();
+                        fdiswriter2.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 3) {
+                    try {
+                        fdiswriter3.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter3.flush();
+                        fdiswriter3.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 4) {
+                    try {
+                        fdiswriter4.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter4.flush();
+                        fdiswriter4.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 5) {
+                    try {
+                        fdiswriter5.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter5.flush();
+                        fdiswriter5.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 6) {
+                    try {
+                        fdiswriter6.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter6.flush();
+                        fdiswriter6.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 7) {
+                    try {
+                        fdiswriter7.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter7.flush();
+                        fdiswriter7.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                else if (position == 8) {
+                    try {
+                        fdiswriter8.write(""+dis1+" "+dis2+"\n");
+                        fdiswriter8.flush();
+                        fdiswriter8.close();
+                    }catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+
+
+
+            if(position==8){
+                initstroke_flag=false;
+                Log.i("TAG","訓練完畢，請敲擊任意按鍵");
+                Log.i("TAG","stroke 按鍵1為 x= "+mean_train[0][1]+"y= "+mean_train[0][2]);
+                Log.i("TAG","stroke 按鍵2為 x= "+mean_train[1][1]+"y= "+mean_train[1][2]);
+                Log.i("TAG","stroke 按鍵3為 x= "+mean_train[2][1]+"y= "+mean_train[2][2]);
+                Log.i("TAG","stroke 按鍵4為 x= "+mean_train[3][1]+"y= "+mean_train[3][2]);
+                Log.i("TAG","stroke 按鍵5為 x= "+mean_train[4][1]+"y= "+mean_train[4][2]);
+                Log.i("TAG","stroke 按鍵6為 x= "+mean_train[5][1]+"y= "+mean_train[5][2]);
+                Log.i("TAG","stroke 按鍵7為 x= "+mean_train[6][1]+"y= "+mean_train[6][2]);
+                Log.i("TAG","stroke 按鍵8為 x= "+mean_train[7][1]+"y= "+mean_train[7][2]);
+                Log.i("TAG","stroke 按鍵9為 x= "+mean_train[8][1]+"y= "+mean_train[8][2]);
+            }
+            else{
+                Log.i("TAG","敲擊完畢，請換第"+real_position+"按鍵");
+            }
+            if(position==1 || position==2 ||position==4|| position==5||position==7||position==8){
+                disx=micdis1;
+                disy=micdis2;
+            }
+        }
+
+    }
+
+    private double[] stroke_reading(double[] data,int position) throws IOException {
+
+        BufferedReader bf=new BufferedReader(new FileReader(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data"+position+".txt"));
+
+        String textline;
+        String str="";
+        while ((textline=bf.readLine())!=null)
+        {
+            str+=" "+textline;
+        }
+        String[] num=str.split(" ");
+        if(num.length<=1)
+        {
+            return  null;
+        }
+        data=new double[num.length-1];
+
+        Log.i("stroke_test",""+num.length+" "+data.length);
+        for(int i=0;i<data.length;i++)
+        {
+            data[i]=Double.parseDouble(num[i+1]);
+            Log.i("stroke_test",num[i+1]);
+        }
+
+        return data;
 
     }
 
@@ -1953,6 +2357,17 @@ private Handler updateviews =new Handler()
             //Log.i(TAG,"count" + tracecount);
             tracecount=0;
         }
+        else if(msg.what==1)
+        {
+            int result=(int)msg.obj;
+            //Log.i("預測結果:",""+result);
+            predict_text.setText("預測結果"+result);
+        }
+        else if(msg.what==2){
+            int position=(int)msg.obj;
+            predict_text.setText("敲擊第"+position+"按鍵");
+
+        }
         boolean xydata = false;
         if(xydata){
             String text_x = texDistance_x.getText().toString();
@@ -2012,22 +2427,12 @@ private Handler updateviews =new Handler()
             String c_result;
             int tmptracex[]= new int[100];
             int tmptracey[]= new int[100];
-            double tmp_sectionx=0.0;//用於section實驗的暫存器
-            double tmp_sectiony=0.0;//用於section實驗的暫存器
+            boolean stroke_data_read=false,stroke_train=false;
 
             int tmpcount=0;
             long current_time=-1;
             long last_time=-1;
             FileWriter fwriter = null;
-            FileWriter fdiswriter0 = null;
-            FileWriter fdiswriter1 = null;
-            FileWriter fdiswriter2 = null;
-            FileWriter fdiswriter3 = null;
-            FileWriter fdiswriter4 = null;
-            FileWriter fdiswriter5 = null;
-            FileWriter fdiswriter6 = null;
-            FileWriter fdiswriter7 = null;
-            FileWriter fdiswriter8 = null;
 
             try {//try to create txt
                 file_baseband_txt=new File(getExternalCacheDir().getAbsolutePath()+"/baseband_data.txt");
@@ -2035,63 +2440,7 @@ private Handler updateviews =new Handler()
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(write_dis)
-            {
-                try {//try to create txt
-                    file_dis0=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data0.txt");
-                    fdiswriter0=new FileWriter(file_dis0,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis1=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data1.txt");
-                    fdiswriter1=new FileWriter(file_dis1,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis2=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data2.txt");
-                    fdiswriter2=new FileWriter(file_dis2,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis3=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data3.txt");
-                    fdiswriter3=new FileWriter(file_dis3,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis4=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data4.txt");
-                    fdiswriter4=new FileWriter(file_dis4,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis5=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data5.txt");
-                    fdiswriter5=new FileWriter(file_dis5,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis6=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data6.txt");
-                    fdiswriter6=new FileWriter(file_dis6,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis7=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data7.txt");
-                    fdiswriter7=new FileWriter(file_dis7,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {//try to create txt
-                    file_dis8=new File(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data8.txt");
-                    fdiswriter8=new FileWriter(file_dis8,true);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+
 
 
             while (blnPlayRecord == false) {
@@ -2109,6 +2458,37 @@ private Handler updateviews =new Handler()
             int recent_tot_ptr=0;
             while (blnPlayRecord) {
 
+
+                if(stroke_data_read==false&&force_train==false)
+                {
+                    for(int r=0;r<9;r++)
+                    {
+                        try {
+                            stroke_training_result[r]=stroke_reading(stroke_training_result[r],r);
+                            if(stroke_training_result[r]==null)
+                            {
+                                Log.i("error","please train");
+                                stroke_train=true;
+                                stroke_data_read=true;
+                                break;
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            Log.i("error","stroke read failed");
+                            stroke_train=true;
+                            break;
+
+                        }
+                    }
+                    initstroke_flag=false;
+                    stroke_data_read=true;
+
+                }
+
+
+
+
+
                 if(mystarttime==0) mystarttime=System.currentTimeMillis();
 
                 int line = llap_audioRecord.read(bsRecord, 0, frameSize * 2);
@@ -2121,15 +2501,16 @@ private Handler updateviews =new Handler()
                     //get baseband
 
 
-
-                    Log.i("BASEBAND", getbaseband(bsRecord, baseband, line / 2));//do cic
+                    getbaseband(bsRecord, baseband, line / 2);
+                    //Log.i("BASEBAND", getbaseband(bsRecord, baseband, line / 2));//do cic
 
 //TODO OBSERVE BASEBAND(length=2048)
                    // Log.i(TAG,"time used forbaseband:"+(endtime-starttime));
 
                     Double basebandtotal=0.0;
                     Double ndctotal=0.0;
-                    Log.i("REMOVEDC", removedc(baseband, baseband_nodc, dcvalue)+baseband_nodc.length);
+                    removedc(baseband, baseband_nodc, dcvalue);
+                   // Log.i("REMOVEDC", removedc(baseband, baseband_nodc, dcvalue)+baseband_nodc.length);
                     nowtime=System.currentTimeMillis();
                     for(int i=0;i<baseband.length;i++)
                     {
@@ -2216,8 +2597,8 @@ private Handler updateviews =new Handler()
                     }
 
  */
-
-                    Log.i("GETDISTANCE", getdistance(baseband_nodc, phasechange, dischange, freqpower)+" "+freqpower.length);
+                    getdistance(baseband_nodc, phasechange, dischange, freqpower);
+                   // Log.i("GETDISTANCE", getdistance(baseband_nodc, phasechange, dischange, freqpower)+" "+freqpower.length);
 //TODO phasechange is hidden in c program and freqpower(useless) is always 0
                     /*
                     for(int i=0;i<freqpower.length;i++)
@@ -2235,7 +2616,7 @@ private Handler updateviews =new Handler()
 
 
                         c_result=calibrate(baseband);
-                        Log.i("CALIBRATE",c_result) ;
+                        //Log.i("CALIBRATE",c_result) ;
                         lastcalibration=now;
                         if(c_result.equals("calibrate OK")){
                             isCalibrated=true;
@@ -2243,8 +2624,8 @@ private Handler updateviews =new Handler()
 
                     }
                     if(isCalibrated) {
-
-                        Log.i("GETIDFT",getidftdistance(baseband_nodc, idftdis));
+                        getidftdistance(baseband_nodc, idftdis);
+                        //Log.i("GETIDFT",getidftdistance(baseband_nodc, idftdis));
                         //idftdis is always 0
                         if(idftdis[0]!=0||idftdis[1]!=0)
                         {
@@ -2334,7 +2715,7 @@ private Handler updateviews =new Handler()
                         trace_x[tracecount]= (int) Math.round((disy*micdis1*micdis1-disx*micdis2*micdis2+disx*disy*(disy-disx))/2/(disx*micdis2+disy*micdis1));
                         trace_y[tracecount]=(int) Math.round(Math.sqrt(Math.abs( (disx*disx-micdis1*micdis1)*(disy*disy-micdis2*micdis2)*((micdis1+micdis2)*(micdis1+micdis2)-(disx-disy)*(disx-disy))  )  )/2/(disx*micdis2+disy*micdis1) );
                         //trace_x[tracecount]= (int) Math.round(disx);
-                        Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
+                        //Log.i("test","x= "+trace_x[tracecount]+" y= "+trace_y[tracecount]);
                         //section[0][1]=(trace_x[tracecount]+tmp_sectionx)/2;
                         //section[0][2]=(trace_y[tracecount]+tmp_sectiony)/2;
                         //tmp_sectionx=trace_x[tracecount];
@@ -2368,287 +2749,27 @@ private Handler updateviews =new Handler()
                     //實驗五 : 敲擊+方向判斷，先敲擊四個頂點，順序為右下、右上、左上、左下(左邊為離手機較遠那側)
                     current_time=System.currentTimeMillis();
                     if(current_time-last_time>500) {
+                        /* case1 四宮格
                         if(stroke_detected && initstroke_flag && initstroke_cnt < 4){//還沒初始化
-                            if (initstroke_cnt == 0&&firststroke_cnt == 0) {
-                                Log.i("TAG", "請敲擊右下角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + " disy= " + disy / 10);
-                                first_train[0][1]=disx / 10;
-                                first_train[0][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                                last_time=System.currentTimeMillis();
-
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter0.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-
+                            stroke_training(initstroke_cnt,firststroke_cnt,disx/10,disy/10);
+                            更改ui邏輯有誤之後修正
+                            Message hint=new Message();
+                            hint.what=2;
+                            hint.obj=initstroke_cnt;
+                            updateviews.sendMessage(hint);
+                            last_time=System.currentTimeMillis();
+                        }
+                        */
+                        /* case2九宮格 */
+                        if(stroke_detected &&initstroke_flag &&initstroke_cnt<9&&(stroke_train==true||force_train==true)){
+                            stroke_training(initstroke_cnt,firststroke_cnt,disx/10,disy/10);
+                            //更改ui邏輯有誤之後修正
+                            stroke_data_read=false;
+                            if(!initstroke_flag){ //初始化完成
+                                stroke_train=false;
+                                force_train=false;
                             }
-                            else if (initstroke_cnt == 0&&firststroke_cnt == 1) {
-                                Log.i("TAG", "請敲擊右下角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + " disy= " + disy / 10);
-                                second_train[0][1]=disx / 10;
-                                second_train[0][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                                last_time=System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter0.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                            else if (initstroke_cnt == 0&&firststroke_cnt == 2) {
-                                firststroke_cnt = 0;
-                                initstroke_cnt++;
-                                mean_train[0][1] = tmp_sectionx / 2;
-                                mean_train[0][2] = tmp_sectiony / 2;
-                                third_train[0][1] = disx / 10;
-                                third_train[0][2] = disy / 10;
-                                tmp_sectionx = 0;
-                                tmp_sectiony = 0;
-                                Log.i("TAG", "右下角敲擊完畢，換右上角");
-                                disx=micdis1;
-                                disy=micdis2;
-                                last_time=System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter0.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                        fdiswriter0.flush();
-                                        fdiswriter0.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-
-                            else if (initstroke_cnt == 1&&firststroke_cnt ==0) {
-                                Log.i("TAG", "請敲擊右上角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
-                                //if(section[0][1]-disx/10>=2) {
-                                first_train[1][1]=disx / 10;
-                                first_train[1][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                                //}
-                                //else{
-                                   //Log.i("TAG","stroke 請重新移動");
-                                //}
-                                last_time=System.currentTimeMillis();
-
-
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter1.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                            else if (initstroke_cnt == 1&&firststroke_cnt ==1) {
-                                Log.i("TAG", "請敲擊右上角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
-                                //if(section[0][1]-disx/10>=2) {
-                                second_train[1][1]=disx / 10;
-                                second_train[1][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                                //}
-                                //else{
-                                //Log.i("TAG","stroke 請重新移動");
-                                //}
-                                last_time=System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter1.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                            else if (initstroke_cnt == 1&&firststroke_cnt == 2) {
-                                firststroke_cnt = 0;
-                                initstroke_cnt++;
-                                mean_train[1][1] = tmp_sectionx / 2;
-                                mean_train[1][2] = tmp_sectionx / 2;
-                                third_train[1][1] = disx / 10;
-                                third_train[1][2] = disy / 10;
-                                tmp_sectionx = 0;
-                                tmp_sectiony = 0;
-                                Log.i("TAG", "右上角敲擊完畢，換左上角");
-                                disx=micdis1;
-                                disy=micdis2;
-                                last_time=System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter1.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                        fdiswriter1.flush();
-                                        fdiswriter1.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-
-                            else if (initstroke_cnt == 2&&firststroke_cnt ==0) {
-                                Log.i("TAG", "請敲擊左上角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
-                                //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
-                                first_train[2][1]=disx / 10;
-                                first_train[2][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                               // }
-                                //else{
-                                    //Log.i("TAG","stroke 請重新移動");
-                                //}
-                                last_time = System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter2.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                            else if (initstroke_cnt == 2&&firststroke_cnt ==1) {
-                                Log.i("TAG", "請敲擊左上角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
-                                //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
-                                second_train[2][1]=disx / 10;
-                                second_train[2][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                                // }
-                                //else{
-                                //Log.i("TAG","stroke 請重新移動");
-                                //}
-                                last_time = System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter2.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                            else if (initstroke_cnt == 2&&firststroke_cnt == 2) {
-                                firststroke_cnt = 0;
-                                initstroke_cnt++;
-                                mean_train[2][1] = tmp_sectionx / 2;
-                                mean_train[2][2] = tmp_sectiony / 2;
-                                third_train[2][1] = disx / 10;
-                                third_train[2][2] = disy / 10;
-                                tmp_sectionx = 0;
-                                tmp_sectiony = 0;
-                                last_time=System.currentTimeMillis();
-                                Log.i("TAG", "左上角敲擊完畢，換左下角");
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter2.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                        fdiswriter2.flush();
-                                        fdiswriter2.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-
-                            else if (initstroke_cnt == 3&&firststroke_cnt ==0) {
-                                Log.i("TAG", "請敲擊左下角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
-                                //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
-                                first_train[3][1]=disx / 10;
-                                first_train[3][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                                //}
-                                //else{
-                                    //Log.i("TAG","stroke 請重新移動");
-                                //}
-                                last_time = System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter3.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                            else if (initstroke_cnt == 3&&firststroke_cnt ==1) {
-                                Log.i("TAG", "請敲擊左下角");
-                                Log.i("TAG", "stroke disx= " + disx / 10 + "disy= " + disy / 10);
-                                //if(disx/10>section[0][1]&&disx/10>section[1][1]&&disy/10>section[1][2]) {
-                                second_train[3][1]=disx / 10;
-                                second_train[3][2]=disy / 10;
-                                tmp_sectionx += disx / 10;
-                                tmp_sectiony += disy / 10;
-                                firststroke_cnt++;
-                                //}
-                                //else{
-                                //Log.i("TAG","stroke 請重新移動");
-                                //}
-                                last_time = System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter3.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                            else if (initstroke_cnt == 3&&firststroke_cnt == 2) {
-                                firststroke_cnt = 0;
-                                initstroke_cnt++;
-                                mean_train[3][1] = tmp_sectionx / 2;
-                                mean_train[3][2] = tmp_sectiony / 2;
-                                third_train[3][1]=disx / 10;
-                                third_train[3][2]=disy / 10;
-                                tmp_sectionx = 0;
-                                tmp_sectiony = 0;
-                                initstroke_flag = false;
-                                Log.i("TAG", "左下角敲擊完畢");
-                                Log.i("TAG","stroke 右下角為 x= "+mean_train[0][1]+"y= "+mean_train[0][2]);
-                                Log.i("TAG","stroke 右上角為 x= "+mean_train[1][1]+"y= "+mean_train[1][2]);
-                                Log.i("TAG","stroke 左上角為 x= "+mean_train[2][1]+"y= "+mean_train[2][2]);
-                                Log.i("TAG","stroke 左下角為 x= "+mean_train[3][1]+"y= "+mean_train[3][2]);
-                                disx=micdis1;
-                                disy=micdis2;
-                                last_time=System.currentTimeMillis();
-                                if(write_dis)
-                                {
-                                    try {
-                                        fdiswriter3.write((disx/10)+" "+(disy/10)+" "+"\n");
-                                        fdiswriter3.flush();
-                                        fdiswriter3.close();
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
+                            last_time=System.currentTimeMillis();
                         }
                         else if(stroke_detected && !initstroke_flag){//初始化完成
                             //方法二:近鄰演算法
@@ -2662,71 +2783,72 @@ private Handler updateviews =new Handler()
                             double sumBxSq = 0;
                             double sumBySq = 0;
                             int nearest=0;
+                        /*四宮格
                             for(int i=0;i<4;i++){
-                                /*歐幾里得距離*/
+                                //歐幾里得距離
                                 neighbor[i]+=Math.sqrt(Math.pow(input_pointx-first_train[i][1],2)+Math.pow(input_pointy-first_train[i][2],2));
                                 neighbor[i]+=Math.sqrt(Math.pow(input_pointx-second_train[i][1],2)+Math.pow(input_pointy-second_train[i][2],2));
                                 neighbor[i]+=Math.sqrt(Math.pow(input_pointx-third_train[i][1],2)+Math.pow(input_pointy-third_train[i][2],2));
                                 neighbor[i]+=Math.sqrt(Math.pow(input_pointx-mean_train[i][1],2)+Math.pow(input_pointy-mean_train[i][2],2));
 
-                                /*曼哈頓距離
+
+
+                                //曼哈頓距離
                                 neighbor[i]+=Math.abs(input_pointx-first_train[i][1])+Math.abs(input_pointx-first_train[i][2]);
                                 neighbor[i]+=Math.abs(input_pointx-second_train[i][1])+Math.abs(input_pointx-second_train[i][2]);
                                 neighbor[i]+=Math.abs(input_pointx-third_train[i][1])+Math.abs(input_pointx-third_train[i][2]);
                                 neighbor[i]+=Math.abs(input_pointx-mean_train[i][1])+Math.abs(input_pointx-mean_train[i][2]);
 
-                                 */
 
-                                /*SSD
+
+                                //SSD
                                 neighbor[i]+=Math.pow(input_pointx-first_train[i][1],2)+Math.pow(input_pointx-first_train[i][2],2);
                                 neighbor[i]+=Math.pow(input_pointx-second_train[i][1],2)+Math.pow(input_pointx-second_train[i][2],2);
                                 neighbor[i]+=Math.pow(input_pointx-third_train[i][1],2)+Math.pow(input_pointx-third_train[i][2],2);
                                 neighbor[i]+=Math.pow(input_pointx-mean_train[i][1],2)+Math.pow(input_pointx-mean_train[i][2],2);
-``
-                                 */
-                                /*cosine similarity
-                                sumProductx = input_pointx*first_train[i][1];
-                                sumProducty = input_pointy*first_train[i][2];
-                                sumAxSq= input_pointx*input_pointx;
-                                sumAySq = input_pointy*input_pointy;
-                                sumBxSq = first_train[i][1]*first_train[i][1];
-                                sumBySq = first_train[i][2]*first_train[i][2];
-                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
-                                sumProductx = input_pointx*second_train[i][1];
-                                sumProducty = input_pointy*second_train[i][2];
-                                sumAxSq = input_pointx*input_pointx;
-                                sumAySq = input_pointy*input_pointy;
-                                sumBxSq = second_train[i][1]*second_train[i][1];
-                                sumBySq = second_train[i][2]*second_train[i][2];
-                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
-                                sumProductx = input_pointx*third_train[i][1];
-                                sumProducty = input_pointy*third_train[i][2];
-                                sumAxSq = input_pointx*input_pointx;
-                                sumAySq = input_pointy*input_pointy;
-                                sumBxSq = third_train[i][1]*third_train[i][1];
-                                sumBySq = third_train[i][2]*third_train[i][2];
-                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
-                                sumProductx = input_pointx*mean_train[i][1];
-                                sumProducty = input_pointy*mean_train[i][2];
-                                sumAxSq = input_pointx*input_pointx;
-                                sumAySq = input_pointy*input_pointy;
-                                sumBxSq = mean_train[i][1]*mean_train[i][1];
-                                sumBySq = mean_train[i][2]*mean_train[i][2];
-                                neighbor[i]+= sumProductx/(sumAxSq*sumBxSq) + sumProducty/(sumAySq*sumBySq);
 
-                                 */
                             }
                             for(int i=0;i<4;i++){
+                                Log.i("TAG","Stroke training distance: "+neighbor[i]);
                                 if(neighbor[nearest]>neighbor[i]){
                                     nearest=i;
                                 }
                             }
-                            for(int i=0;i<4;i++){
-                                neighbor[i]=0;
+                            for(int i=0;i<12;i++) {
+                                neighbor[i] = 0;
+                            }
+                        */
+                            for(int i=0;i<9;i++){
+                                int position_length=stroke_training_result[i].length;
+                                for(int j=0;j<position_length;j++){
+                                    double tmp_distance_x=0.0,tmp_distance_y=0.0;
+                                    if(j%2==0){
+                                        tmp_distance_x=Math.pow(input_pointx-stroke_training_result[i][j],2);
+                                        tmp_distance_x+=Math.abs(input_pointx-stroke_training_result[i][j]);
+                                    }
+                                    else{
+                                        tmp_distance_y=Math.pow(input_pointy-stroke_training_result[i][j],2);
+                                        tmp_distance_y=Math.abs(input_pointy-stroke_training_result[i][j]);
+                                    }
+                                    neighbor[i]+=Math.sqrt(tmp_distance_x+tmp_distance_y);
+                                }
+                            }
+                            for(int i=0;i<9;i++){
+                                Log.i("TAG","Stroke training distance: "+neighbor[i]);
+                                if(neighbor[nearest]>neighbor[i]){
+                                    nearest=i;
+                                }
+                            }
+                            for(int i=0;i<9;i++) {
+                                neighbor[i] = 0;
                             }
                             nearest+=1;
                             Log.i("TAG","Stroke 預測按鍵數字為: "+nearest);
                             //predict_text.setText("預測按鍵為: "+nearest);
+                            Message result=new Message();
+                            result.what=1;
+                            result.obj=nearest;
+                            updateviews.sendMessage(result);
                             last_time=System.currentTimeMillis();
                         }
                     }

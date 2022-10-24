@@ -26,11 +26,12 @@
         android:textSize="34sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.499"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.644" />
 
     <Button
         android:id="@+id/btn_audio_record"
@@ -39,10 +40,10 @@
         android:text="audio record"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.113"
+        app:layout_constraintHorizontal_bias="0.158"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/ImageView01"
-        app:layout_constraintVertical_bias="0.802" />
+        app:layout_constraintVertical_bias="0.881" />
 
     <Button
         android:id="@+id/btn_audio_end"
@@ -51,10 +52,10 @@
         android:text="audio end"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.574"
+        app:layout_constraintHorizontal_bias="0.713"
         app:layout_constraintStart_toEndOf="@+id/btn_audio_record"
         app:layout_constraintTop_toTopOf="@+id/ImageView01"
-        app:layout_constraintVertical_bias="0.802" />
+        app:layout_constraintVertical_bias="0.881" />
 
     <Button
         android:id="@+id/btn_audio_play"
@@ -168,10 +169,10 @@
         android:text="llap start"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.157"
+        app:layout_constraintHorizontal_bias="0.092"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/ImageView01"
-        app:layout_constraintVertical_bias="0.237" />
+        app:layout_constraintVertical_bias="0.314" />
 
     <Button
         android:id="@+id/btn_llap_stop"
@@ -180,10 +181,10 @@
         android:text="llap stop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.836"
+        app:layout_constraintHorizontal_bias="0.885"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.237" />
+        app:layout_constraintVertical_bias="0.314" />
 
     <TextView
         android:id="@+id/text_disatnce_x"
@@ -219,10 +220,10 @@
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.095"
+        app:layout_constraintHorizontal_bias="0.076"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.172" />
+        app:layout_constraintVertical_bias="0.2" />
 
     <TextView
         android:id="@+id/text_absolute_disy"
@@ -232,10 +233,10 @@
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.879"
+        app:layout_constraintHorizontal_bias="0.897"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.172" />
+        app:layout_constraintVertical_bias="0.2" />
 
     <Button
         android:id="@+id/btn_generate"
@@ -244,10 +245,10 @@
         android:text="generate"
         app:layout_constraintBottom_toBottomOf="@+id/imageView02"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.15"
+        app:layout_constraintHorizontal_bias="0.174"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.641" />
+        app:layout_constraintVertical_bias="0.723" />
 
     <Button
         android:id="@+id/btn_train"
@@ -256,10 +257,10 @@
         android:text="train"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.789"
+        app:layout_constraintHorizontal_bias="0.818"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.638" />
+        app:layout_constraintVertical_bias="0.721" />
 
     <Button
         android:id="@+id/btn_crazy"
@@ -268,10 +269,9 @@
         android:text="@string/crazy_button"
         app:layout_constraintBottom_toBottomOf="@+id/imageView02"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.479"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.353" />
+        app:layout_constraintVertical_bias="0.314" />
 
     <TextView
         android:id="@+id/predict_text"
@@ -281,9 +281,19 @@
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.481"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.08" />
+        app:layout_constraintVertical_bias="0.089" />
+
+    <Button
+        android:id="@+id/btn_force_train"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="llap train"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.498" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

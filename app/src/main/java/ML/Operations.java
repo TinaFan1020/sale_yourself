@@ -147,7 +147,7 @@ public class Operations {
 		// read registered/trained words
 		db = new ObjectIODataBase();
 		db.setType("hmm");
-		words = db.readRegistered().toArray(new String[0]);//todo  what
+		words = db.readRegistered().toArray(new String[0]);
 		db = null;
 		System.out.println("registred words ::: count : " + words.length);
 		ArrayWriter.printStringArrayToConole(words);
