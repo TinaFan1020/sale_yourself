@@ -332,6 +332,7 @@ public class MainActivity extends AppCompatActivity {
         btn_toggle_window.setVisibility(View.INVISIBLE);
         btn_audio_play.setVisibility(View.INVISIBLE);
         btn_toggle_draw.setVisibility(View.INVISIBLE);
+        txt_out.setVisibility(View.INVISIBLE);
         imageView.setVisibility(View.INVISIBLE);
         imageView2.setVisibility(View.INVISIBLE);
         texDistance_x.setVisibility(View.INVISIBLE);
@@ -819,10 +820,15 @@ public class MainActivity extends AppCompatActivity {
         return data;
 
     }
-
+    long tmp_time1,tmp_time2;
     private void onclick_crazy_button() {
         disx=micdis1;
         disy=micdis2;
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return;
     }
 
@@ -2459,8 +2465,9 @@ private Handler updateviews =new Handler()
             while (blnPlayRecord) {
 
 
-                if(stroke_data_read==false&&force_train==false)
+                if(stroke_data_read==false&&force_train==false )
                 {
+                    boolean error_flag=false;
                     for(int r=0;r<9;r++)
                     {
                         try {
@@ -2468,8 +2475,7 @@ private Handler updateviews =new Handler()
                             if(stroke_training_result[r]==null)
                             {
                                 Log.i("error","please train");
-                                stroke_train=true;
-                                stroke_data_read=true;
+                                error_flag=true;
                                 break;
                             }
                         } catch (IOException e) {
@@ -2480,9 +2486,16 @@ private Handler updateviews =new Handler()
 
                         }
                     }
-                    initstroke_flag=false;
-                    stroke_data_read=true;
-
+                    if(error_flag==true)
+                    {
+                        stroke_train=true;
+                        stroke_data_read=true;
+                        initstroke_flag=true;
+                    }
+                    else {
+                        initstroke_flag = false;
+                        stroke_data_read = true;
+                    }
                 }
 
 
@@ -2761,7 +2774,7 @@ private Handler updateviews =new Handler()
                         }
                         */
                         /* case2九宮格 */
-                        if(stroke_detected &&initstroke_flag &&initstroke_cnt<9&&(stroke_train==true||force_train==true)){
+                        if(stroke_detected &&initstroke_flag &&initstroke_cnt<9&&(stroke_train==true||force_train==true||stroke_training_result[0]==null)){
                             stroke_training(initstroke_cnt,firststroke_cnt,disx/10,disy/10);
                             //更改ui邏輯有誤之後修正
                             stroke_data_read=false;
