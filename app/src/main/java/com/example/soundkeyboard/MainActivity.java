@@ -239,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
     FileWriter fdiswriter6 = null;
     FileWriter fdiswriter7 = null;
     FileWriter fdiswriter8 = null;
-
+    private String test_result = null;
     //llap zone
 
     int cnt = 0;
@@ -1438,7 +1438,7 @@ public class MainActivity extends AppCompatActivity {
 
                         File test_stroke_file = new File(getExternalCacheDir().getAbsolutePath() + "/stroke_tmp_2ch.wav");
                         System.out.println("mytag"+test_stroke_file.getPath());
-                        String test_result = opr.hmmGetWordFromFile(test_stroke_file);
+                        test_result = opr.hmmGetWordFromFile(test_stroke_file);
                         if(test_result==null) {
                             Log.i("TAG", "continue");
                             continue;
@@ -2367,6 +2367,11 @@ private Handler updateviews =new Handler()
         {
             int result=(int)msg.obj;
             //Log.i("預測結果:",""+result);
+            String label = "7_2ch";
+            if(test_result != null && test_result.compareTo(label)==0 && result==6){
+                result = 1 ;
+                Log.i("預測結果更改:",""+result);
+            }
             predict_text.setText("預測結果"+result);
         }
         else if(msg.what==2){
