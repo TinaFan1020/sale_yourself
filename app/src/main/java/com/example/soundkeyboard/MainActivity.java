@@ -43,10 +43,13 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -102,7 +105,8 @@ import com.karlotoy.perfectune.instance.PerfectTune;
 
 public class MainActivity extends AppCompatActivity {
     private boolean hasmic = false, isRecording, haswrite = false, hasread = false,hasshake=false,hasallfile=false;
-    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate,btn_crazy,btn_force_train;
+    Button btn_toggle_draw, btn_audio_record, btn_audio_stop, btn_audio_play, btn_toggle_window, btn_play_frequency, btn_stop_frequency, btn_cal_sd, btn_llap_start, btn_llap_stop,btn_train,btn_generate,btn_crazy,btn_force_train,btn_bat;
+    Button btn_results[]=new Button[9];
     ImageView imageView;//最上面畫畫ㄉ
     ImageView imageView2;//最下面顯示路徑的
     TextView txt_out,texDistance_x,texDistance_y,absolute_disx,absolute_disy,predict_text;//中間顯示字ㄉ
@@ -123,7 +127,10 @@ public class MainActivity extends AppCompatActivity {
     boolean protago_flag=false;
     boolean shake_triggered=false;
     boolean stabled_flag=true;
+    boolean developer_mode=false;
+    int developer_counter=4;
     int retrigger_flag=0;
+    Toast mytoast;
     boolean firststart_flag=false;//看是否為剛開啟llap按鍵
     boolean firststroke_flag=true;//輸入一維距離實驗上下格的範圍
     int firststroke_cnt=0;
@@ -285,6 +292,16 @@ public class MainActivity extends AppCompatActivity {
         btn_train=findViewById(R.id.btn_train);
         btn_generate=findViewById(R.id.btn_generate);
         btn_force_train=findViewById(R.id.btn_force_train);
+        btn_results[0]=findViewById(R.id.btn_result1);
+        btn_results[1]=findViewById(R.id.btn_result2);
+        btn_results[2]=findViewById(R.id.btn_result3);
+        btn_results[3]=findViewById(R.id.btn_result4);
+        btn_results[4]=findViewById(R.id.btn_result5);
+        btn_results[5]=findViewById(R.id.btn_result6);
+        btn_results[6]=findViewById(R.id.btn_result7);
+        btn_results[7]=findViewById(R.id.btn_result8);
+        btn_results[8]=findViewById(R.id.btn_result9);
+        btn_bat=findViewById(R.id.btn_bat);
         frequency_text = findViewById(R.id.frequency_num);
         txt_out = findViewById(R.id.txt_out);
         predict_text=findViewById(R.id.predict_text);
@@ -301,9 +318,11 @@ public class MainActivity extends AppCompatActivity {
         btn_play_frequency.setOnClickListener(v -> onlick_frequency_play());
         btn_stop_frequency.setOnClickListener(v -> onlick_frequency_stop());
         btn_cal_sd.setOnClickListener(v -> cal_sd());
+        btn_llap_start.setOnClickListener(v->LLAP_START());
         hsr= new HMM_VQ_Speech_Recognition();
         btn_generate.setOnClickListener(v -> onclick_generate());
         btn_train.setOnClickListener(v->onclick_train());
+        btn_bat.setOnClickListener(v->onclick_bat());
         //畫布大小 寬=變數1 高=變數2 最左上角是0 0 右下角是 (寬,高)
         bitmap = Bitmap.createBitmap((int) 4096, (int) 1400, Bitmap.Config.ARGB_8888);
         bitmap2 = Bitmap.createBitmap((int) 150, (int) 150, Bitmap.Config.ARGB_8888);
@@ -333,6 +352,7 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_play.setVisibility(View.INVISIBLE);
         btn_toggle_draw.setVisibility(View.INVISIBLE);
         txt_out.setVisibility(View.INVISIBLE);
+        predict_text.setVisibility(View.INVISIBLE);
         imageView.setVisibility(View.INVISIBLE);
         imageView2.setVisibility(View.INVISIBLE);
         texDistance_x.setVisibility(View.INVISIBLE);
@@ -420,6 +440,7 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        /*
         btn_llap_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -451,7 +472,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+        */
+
         //
+        /*
         btn_llap_stop.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -489,12 +513,20 @@ public class MainActivity extends AppCompatActivity {
                 disy=micdis2;
             }
         });
+         */
 
         btn_force_train.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
+                if(developer_mode==false)
+                {
+                    if(mytoast!=null)mytoast.cancel();
+                    mytoast=Toast.makeText(getApplicationContext(), "開發者模式未開啟", Toast.LENGTH_SHORT);
+                    mytoast.show();
+                    return;
+                }
                force_train=true;
                predict_text.setText("請按LLAP做Training");
             }
@@ -503,6 +535,110 @@ public class MainActivity extends AppCompatActivity {
         //llap zone
 
     }
+
+    private void color_change_yellow(int i)
+    {
+        btn_results[i-1].setBackgroundResource(R.drawable.btn_yellow);
+        ScaleAnimation scaleAnimation = new ScaleAnimation(
+                1.0f,1.25f,1.0f,1.25f,
+                Animation.RELATIVE_TO_SELF,0.5f,
+                Animation.RELATIVE_TO_SELF,0.5f);
+        scaleAnimation.setDuration(300);
+        scaleAnimation.setRepeatMode(ScaleAnimation.REVERSE);
+        scaleAnimation.setRepeatCount(1);
+        btn_results[i-1].startAnimation(scaleAnimation);
+    }
+    private void color_change_blue(int i)
+    {
+        btn_results[i-1].setBackgroundResource(R.drawable.btns);
+    }
+
+    private void onclick_bat()
+    {
+        if(developer_counter==0)
+        {
+            if(mytoast!=null)mytoast.cancel();
+            mytoast=Toast.makeText(getApplicationContext(), "開發者模式已開啟!", Toast.LENGTH_SHORT);
+            mytoast.show();
+            developer_mode=true;
+        }
+        else {
+            if(mytoast!=null)mytoast.cancel();
+            mytoast=Toast.makeText(getApplicationContext(), "再按小蝙蝠" + developer_counter + "下以開啟開發者模式", Toast.LENGTH_SHORT);
+            mytoast.show();
+            developer_counter--;
+        }
+    }
+
+    public void LLAP_START() {
+        //btn_llap_start.setEnabled(false);
+        btn_llap_stop.setEnabled(true);
+        btn_force_train.setEnabled(false);
+        btn_llap_start.setText("BAT\nOFF");
+        btn_llap_start.setBackgroundResource(R.drawable.btn_purple);
+        btn_llap_start.setOnClickListener(v->LLAP_STOP());
+        //AudioManager llap_audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        //llap_audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, llap_audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
+        recBufSize = AudioRecord.getMinBufferSize(sampleRateInHz,
+                AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+
+        Log.i(TAG, "recbuffersize:" + recBufSize);
+
+        playBufSize = AudioTrack.getMinBufferSize(sampleRateInHz,
+                AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            checkPermission();
+        }
+        llap_audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                sampleRateInHz, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, recBufSize);
+
+
+        Log.i(TAG,"channels:" + llap_audioRecord.getChannelConfiguration());
+
+        new ThreadInstantPlay().start();
+        new ThreadInstantRecord().start();
+
+    }
+
+    public void LLAP_STOP(){
+
+                //btn_llap_start.setEnabled(true);
+                //btn_llap_stop.setEnabled(false);
+                btn_force_train.setEnabled(true);
+                btn_llap_start.setText("BAT\nON");
+                btn_llap_start.setBackgroundResource(R.drawable.btns);
+                btn_llap_start.setOnClickListener(v->LLAP_START());
+                isCalibrated=false;
+                blnPlayRecord=false;
+                isCalibrated=false;
+                firststroke_cnt=0;
+                error_cnt=0;
+                initstroke_flag=true;
+                initstroke_cnt=0;
+                firststroke_flag=true;
+                upper_section=0.0;
+                lower_section=0.0;
+                left_section=0.0;
+                right_section=0.0;
+                firststart_flag=false;
+                Arrays.fill(trace_x,0);
+                Arrays.fill(trace_y,0);
+                Arrays.fill(left_down_section,0);
+                Arrays.fill(left_up_section,0);
+                Arrays.fill(right_down_section,0);
+                Arrays.fill(right_up_section,0);
+                //Arrays.fill(section,0);
+                //Arrays.fill(neighbor,0);
+                canvas2.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                canvas2.drawColor(Color.WHITE);
+                path.reset();
+                drawcount=1;
+                disx=micdis1;
+                disy=micdis2;
+
+    }
+
     private void stroke_training(int position,int training_time,double dis1,double dis2){ //position為知道現在training第幾個按鍵 training_time為目前敲擊該按鍵第幾次
         Log.i("TAG","stroke dis1= "+dis1+" dis2= "+dis2);
         int real_position=position+1;
@@ -833,11 +969,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onclick_train() {
+        if(developer_mode==false)
+        {
+            if(mytoast!=null)mytoast.cancel();
+            mytoast=Toast.makeText(getApplicationContext(), "開發者模式未開啟", Toast.LENGTH_SHORT);
+            mytoast.show();
+            return;
+        }
         hsr.train();
         return;
     }
 
     private void onclick_generate() {
+
+        if(developer_mode==false)
+        {
+            if(mytoast!=null)mytoast.cancel();
+            mytoast=Toast.makeText(getApplicationContext(), "開發者模式未開啟", Toast.LENGTH_SHORT);
+            mytoast.show();
+            return;
+        }
+
         System.out.println("++++++generate+++++");
         hsr.generate();
         System.out.println("++++++generate succeed+++++");
@@ -1934,7 +2086,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         thread.start();
-        ButtonEnabled(false,true,false);
+        btn_audio_record.setText("STOP");
+        btn_audio_record.setBackgroundResource(R.drawable.btn_purple);
+        btn_audio_record.setOnClickListener(v->onclick_audio_stop());
+        //ButtonEnabled(false,true,false);
     }
     private void ButtonEnabled(boolean start, boolean stop, boolean play) {
         btn_audio_record.setEnabled(start);
@@ -1944,7 +2099,10 @@ public class MainActivity extends AppCompatActivity {
     private void onclick_audio_stop()//停止撥放
     {
         isRecording = false;
-        ButtonEnabled(true, false, true);
+        //ButtonEnabled(true, false, true);
+        btn_audio_record.setText("START");
+        btn_audio_record.setBackgroundResource(R.drawable.btns);
+        btn_audio_record.setOnClickListener(v->onclick_audio_start());
         Log.i(TAG,"audio stop");
     }
 
@@ -2294,6 +2452,7 @@ private Handler updateviews =new Handler()
                 texDistance_y.setText(String.format("y=%04.2f", dischangey / 10) + "cm");
                 absolute_disx.setText(String.format("absolute x=%04.2f", disx/10) + "cm");
                 absolute_disy.setText(String.format("absolute y=%04.2f", disy/10)+ "cm");
+                Log.i(TAG,"result"+String.format("absolute x=%04.2f", disx/10) + "cm");
 
                 int tmp[][] = (int[][]) msg.obj;//1為x 2為y
                 //int tmp[][]={{4,1},{6,3},{8,2},{10,2},{10,1}};
@@ -2373,6 +2532,24 @@ private Handler updateviews =new Handler()
                 Log.i("預測結果更改:",""+result);
             }
             predict_text.setText("預測結果"+result);
+            int color=1;
+            if(result==9) color=1;
+            if(result==6) color=2;
+            if(result==3) color=3;
+            if(result==8) color=4;
+            if(result==5) color=5;
+            if(result==2) color=6;
+            if(result==7) color=7;
+            if(result==4) color=8;
+            if(result==1) color=9;
+            for(int i=1;i<=9;i++)
+            {
+                if(color==i) continue;
+                color_change_blue(i);
+            }
+            color_change_yellow(color);
+
+
         }
         else if(msg.what==2){
             int position=(int)msg.obj;
