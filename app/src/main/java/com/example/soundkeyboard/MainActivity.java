@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
         //requestWindowFeature(Window.FEATURE_NO_TITLE);
 
         //setContentView(R.layout.activity_main);
-        Log.i(TAG, "onCreate:123");
+        //Log.i(TAG, "onCreate:123");
         setContentView(R.layout.activity_main);
         checkPermission();
         //按鈕的宣告
@@ -339,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
         imageView2.setImageBitmap(bitmap2);
         //path.moveTo(100, 100);
         tmpfile = getExternalCacheDir().getAbsolutePath();
-        Log.i(TAG, "pid of main thread= " + Thread.currentThread().getId());
+        //Log.i(TAG, "pid of main thread= " + Thread.currentThread().getId());
         imageView.invalidate();
         perfectTune.setTuneFreq(15000);
         perfectTune.setTuneAmplitude(50000);
@@ -357,6 +357,9 @@ public class MainActivity extends AppCompatActivity {
         imageView2.setVisibility(View.INVISIBLE);
         texDistance_x.setVisibility(View.INVISIBLE);
         texDistance_y.setVisibility(View.INVISIBLE);
+        btn_generate.setVisibility(View.INVISIBLE);
+        btn_train.setVisibility(View.INVISIBLE);
+        btn_force_train.setVisibility(View.INVISIBLE);
         HMM_VQ_Speech_Recognition HMM = new HMM_VQ_Speech_Recognition( );
 
         //String testc=testcc('c');
@@ -378,10 +381,10 @@ public class MainActivity extends AppCompatActivity {
 
         tracecount = 0;
 
-        Log.i(TAG, "initialization start at time: " + System.currentTimeMillis());
+       // Log.i(TAG, "initialization start at time: " + System.currentTimeMillis());
         Log.i(TAG, initdownconvert(sampleRateInHz, numfreq, wavefreqs));
-        Log.i(TAG, "" + wavefreqs[0]);
-        Log.i(TAG, "initialization finished at time: " + System.currentTimeMillis());
+       // Log.i(TAG, "" + wavefreqs[0]);
+       // Log.i(TAG, "initialization finished at time: " + System.currentTimeMillis());
         int maxvolume=0;
         if(write_dis)
         {
@@ -564,6 +567,9 @@ public class MainActivity extends AppCompatActivity {
             mytoast=Toast.makeText(getApplicationContext(), "開發者模式已開啟!", Toast.LENGTH_SHORT);
             mytoast.show();
             developer_mode=true;
+            btn_force_train.setVisibility(View.VISIBLE);
+            btn_train.setVisibility(View.VISIBLE);
+            btn_generate.setVisibility(View.VISIBLE);
         }
         else {
             if(mytoast!=null)mytoast.cancel();
@@ -585,7 +591,7 @@ public class MainActivity extends AppCompatActivity {
         recBufSize = AudioRecord.getMinBufferSize(sampleRateInHz,
                 AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
 
-        Log.i(TAG, "recbuffersize:" + recBufSize);
+        //Log.i(TAG, "recbuffersize:" + recBufSize);
 
         playBufSize = AudioTrack.getMinBufferSize(sampleRateInHz,
                 AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
@@ -644,7 +650,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void stroke_training(int position,int training_time,double dis1,double dis2){ //position為知道現在training第幾個按鍵 training_time為目前敲擊該按鍵第幾次
         Log.i("TAG","stroke dis1= "+dis1+" dis2= "+dis2);
-        int real_position=position+1;
+        int paper_position[]={9,6,3,8,5,2,7,4,1};
+        int real_position=paper_position[position];
+        //int real_position=position+1;
         /* 四宮格
         if(training_time==0){
             first_train[position][1]=dis1;
@@ -806,7 +814,12 @@ public class MainActivity extends AppCompatActivity {
             tmp_sectionx=0;
             tmp_sectiony=0;
             training_set_cnt=0;
-            real_position++;
+            //position++;
+            if(position!=8) {
+                int tmp = position + 1;
+                real_position = paper_position[tmp];
+            }
+            //real_position++;
             Message hint=new Message();
             hint.what=2;
             hint.obj=real_position;
@@ -911,15 +924,15 @@ public class MainActivity extends AppCompatActivity {
             if(position==8){
                 initstroke_flag=false;
                 Log.i("TAG","訓練完畢，請敲擊任意按鍵");
-                Log.i("TAG","stroke 按鍵1為 x= "+mean_train[0][1]+"y= "+mean_train[0][2]);
-                Log.i("TAG","stroke 按鍵2為 x= "+mean_train[1][1]+"y= "+mean_train[1][2]);
-                Log.i("TAG","stroke 按鍵3為 x= "+mean_train[2][1]+"y= "+mean_train[2][2]);
-                Log.i("TAG","stroke 按鍵4為 x= "+mean_train[3][1]+"y= "+mean_train[3][2]);
-                Log.i("TAG","stroke 按鍵5為 x= "+mean_train[4][1]+"y= "+mean_train[4][2]);
-                Log.i("TAG","stroke 按鍵6為 x= "+mean_train[5][1]+"y= "+mean_train[5][2]);
-                Log.i("TAG","stroke 按鍵7為 x= "+mean_train[6][1]+"y= "+mean_train[6][2]);
-                Log.i("TAG","stroke 按鍵8為 x= "+mean_train[7][1]+"y= "+mean_train[7][2]);
-                Log.i("TAG","stroke 按鍵9為 x= "+mean_train[8][1]+"y= "+mean_train[8][2]);
+              //  Log.i("TAG","stroke 按鍵1為 x= "+mean_train[0][1]+"y= "+mean_train[0][2]);
+               // Log.i("TAG","stroke 按鍵2為 x= "+mean_train[1][1]+"y= "+mean_train[1][2]);
+                //Log.i("TAG","stroke 按鍵3為 x= "+mean_train[2][1]+"y= "+mean_train[2][2]);
+                //Log.i("TAG","stroke 按鍵4為 x= "+mean_train[3][1]+"y= "+mean_train[3][2]);
+                //Log.i("TAG","stroke 按鍵5為 x= "+mean_train[4][1]+"y= "+mean_train[4][2]);
+                //Log.i("TAG","stroke 按鍵6為 x= "+mean_train[5][1]+"y= "+mean_train[5][2]);
+                //Log.i("TAG","stroke 按鍵7為 x= "+mean_train[6][1]+"y= "+mean_train[6][2]);
+                //Log.i("TAG","stroke 按鍵8為 x= "+mean_train[7][1]+"y= "+mean_train[7][2]);
+                //Log.i("TAG","stroke 按鍵9為 x= "+mean_train[8][1]+"y= "+mean_train[8][2]);
             }
             else{
                 Log.i("TAG","敲擊完畢，請換第"+real_position+"按鍵");
@@ -935,7 +948,7 @@ public class MainActivity extends AppCompatActivity {
     private double[] stroke_reading(double[] data,int position) throws IOException {
 
         BufferedReader bf=new BufferedReader(new FileReader(Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath()+"/dis_data"+position+".txt"));
-
+        Log.i("posit","/dis_data"+position+".txt");
         String textline;
         String str="";
         while ((textline=bf.readLine())!=null)
@@ -949,11 +962,11 @@ public class MainActivity extends AppCompatActivity {
         }
         data=new double[num.length-1];
 
-        Log.i("stroke_test",""+num.length+" "+data.length);
+        //Log.i("stroke_test",""+num.length+" "+data.length);
         for(int i=0;i<data.length;i++)
         {
             data[i]=Double.parseDouble(num[i+1]);
-            Log.i("stroke_test",num[i+1]);
+           // Log.i("stroke_test",num[i+1]);
         }
 
         return data;
@@ -1029,11 +1042,11 @@ public class MainActivity extends AppCompatActivity {
             if(Environment.isExternalStorageManager())
             {
                 hasallfile=true;
-                Log.i("mytag","hasallfile");
+              // Log.i("mytag","hasallfile");
             }else
             {
                 hasallfile=false;
-                Log.i("mytag","nohasallfile");
+               // Log.i("mytag","nohasallfile");
             }
         }else
         {
@@ -1080,18 +1093,18 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             hasmic = true;
-            Log.i(TAG, "get mic");
+            //Log.i(TAG, "get mic");
         }
         if (requestCode == 2 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             haswrite = true;
-            Log.i(TAG, "get write");
+           // Log.i(TAG, "get write");
         }
         if (requestCode == 3 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             hasread = true;
-            Log.i(TAG, "get read");
+           // Log.i(TAG, "get read");
         }
         if (!(grantResults.length > 0)) {
-            Log.i(TAG, "request error");
+            //Log.i(TAG, "request error");
         }
     }
 
@@ -1127,7 +1140,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                      */
-                    Log.i(TAG,"THIS PART IS NO LONGER USED");
+                  //  Log.i(TAG,"THIS PART IS NO LONGER USED");
                     break;
                 case 2:
                     //for drawing;
@@ -1190,7 +1203,7 @@ public class MainActivity extends AppCompatActivity {
                 case 6:
                     double tmp6[]=(double[]) msg.obj;
                     canvas.drawColor(Color.BLACK);
-                    Log.i(TAG,"draw shake");
+                    //Log.i(TAG,"draw shake");
                     for(int i=0;i<tmp6.length;i++)
                     {
                         short tmpp=(short)(Math.ceil(tmp6[i]));
@@ -1209,7 +1222,7 @@ public class MainActivity extends AppCompatActivity {
                     for(int i=0;i<4095;i++)
                     {
                         //canvas.drawCircle(i, Math.round(500-tmp7[i/2]),6,paint);
-                        Log.i("basedata","i= "+i+" data= "+tmp7[i/2]);
+                       // Log.i("basedata","i= "+i+" data= "+tmp7[i/2]);
                         canvas.drawLine(i,700-Math.round(tmp7[i/2]*4),i+1,700-Math.round(tmp7[(i+1)/2]*4), paint);
                     }
                     imageView.invalidate();
@@ -1254,7 +1267,7 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void StartAudioRecord() {//錄音的函式 還有處理資料也在這裡
-        Log.i(TAG, "開始錄音");
+        //Log.i(TAG, "開始錄音");
         ////////////////////////////
         //此處都是關於按鍵聲偵測的變數 但是此處會有overflow的問題且準度不精確
         double audio_avg_global=0;
@@ -1288,37 +1301,37 @@ public class MainActivity extends AppCompatActivity {
         file_org_2ch=new File( getExternalCacheDir().getAbsolutePath()+"/audio_org_2ch.pcm");
         
 
-        Log.i(TAG, "生成檔案"+file.getAbsolutePath());
+       // Log.i(TAG, "生成檔案"+file.getAbsolutePath());
 //如果存在，就先刪除再建立
         if(!file.exists()){
-            Log.i(TAG,"檔案不存在");
+           // Log.i(TAG,"檔案不存在");
         }
         if (file.exists()) {
             file.delete();
-            Log.i(TAG, "刪除檔案");
+            //Log.i(TAG, "刪除檔案");
 
             try {
                 file.createNewFile();
-                Log.i(TAG, "建立檔案");
+               // Log.i(TAG, "建立檔案");
             } catch (IOException e) {
                 e.printStackTrace();
-                Log.i(TAG, "未能建立");
+               // Log.i(TAG, "未能建立");
                 //throw new IllegalStateException("未能建立"+file.toString());
             }
         }
         if(!file_org.exists()){
-            Log.i(TAG,"檔案不存在");
+           // Log.i(TAG,"檔案不存在");
         }
         if (file_org.exists()) {
             file_org.delete();
-            Log.i(TAG, "刪除檔案");
+            //Log.i(TAG, "刪除檔案");
 
             try {
                 file_org.createNewFile();
-                Log.i(TAG, "建立檔案");
+               // Log.i(TAG, "建立檔案");
             } catch (IOException e) {
                 e.printStackTrace();
-                Log.i(TAG, "未能建立");
+               // Log.i(TAG, "未能建立");
                 //throw new IllegalStateException("未能建立"+file.toString());
             }
         }
@@ -1339,7 +1352,7 @@ public class MainActivity extends AppCompatActivity {
             
 
             int NOTbufferSize = AudioRecord.getMinBufferSize(frequency, channelConfiguration, audioEncoding);//這會得到最小所需buffersize 但要用2的次方大小
-            Log.i(TAG, "recbuffersize:" + NOTbufferSize);
+          //  Log.i(TAG, "recbuffersize:" + NOTbufferSize);
             int bufferSize=4096;// set as power of 2 for fft 這是每個迴圈取的資料點 每個迴圈約等於0.09秒
             int bufferSize2channel=4096*2;//for 2 channel
             int fftSize=bufferSize*2;//丟進去做fft的大小 是buffer的兩倍 為了讓fft中的運作與buffer對齊
@@ -1373,7 +1386,7 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < bufferSize; i++)//init of complex data array
                 complexBuffer[i] = new ComplexNumber(0, 0);
             audioRecord.startRecording();
-            Log.i(TAG, "開始錄音");
+          //  Log.i(TAG, "開始錄音");
             isRecording = true;
             int looptimes=0;
             while (isRecording) {
@@ -1595,7 +1608,7 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println("mytag"+test_stroke_file.getPath());
                         test_result = opr.hmmGetWordFromFile(test_stroke_file);
                         if(test_result==null) {
-                            Log.i("TAG", "continue");
+                          //  Log.i("TAG", "continue");
                             continue;
                         }
                         //String test_label_path = Environment.getExternalStoragePublicDirectory(DIRECTORY_MUSIC).getPath() + "//SoundKeyboard_TrainWav//4" +"/cache2022-10-08T151829.394audio_fft.wav";
@@ -1636,7 +1649,7 @@ public class MainActivity extends AppCompatActivity {
                 pos_avg_local=(double)pos_total_local/(double)pos_cnt_local;
                 pos_avg_global=(double)pos_total_global/(double)pos_cnt_global;
                 neg_avg_local=(double)neg_total_local/(double)audio_cnt_local;
-                Log.i(TAG,"lmax="+localmax);
+             //   Log.i(TAG,"lmax="+localmax);
 
                 //end of do inverse fft
                 double peak = -1.0;
@@ -1662,7 +1675,7 @@ public class MainActivity extends AppCompatActivity {
                     spectrum_sd+=Math.abs(spectrum[i]-spectrum_average);
                 }
                 spectrum_sd/=data_nums;
-                Log.i("MyTag","sd=" +spectrum_sd);
+              //  Log.i("MyTag","sd=" +spectrum_sd);
 
                 /*
                 if(peak_location<=32&&peak_location>=10&&peak>=17&&spectrum_total>=550)
@@ -1673,7 +1686,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                 most_freq = (double)((double)frequency * (double)peak_location)/(double)(bufferSize*2);
-                Log.i(TAG,"Most freq="+most_freq);
+                //Log.i(TAG,"Most freq="+most_freq);
 
                 //three state counter if recently detected block for a moment to prevent error
 
@@ -1692,16 +1705,16 @@ public class MainActivity extends AppCompatActivity {
                         last_stroke_time=System.currentTimeMillis();
                         retrigger_flag=1;
                        // stabled_flag=false;
-                        Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
+                       // Log.i(TAG+"stroke detected","strokes= " +stroke_cnt+"looptimes="+looptimes);
 
-                        Log.i(TAG,"peak location"+peak_location);
+                      //  Log.i(TAG,"peak location"+peak_location);
                         stroke_state-=2;
                     }
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&retrigger_flag!=0) {stroke_detected=false; Log.i(TAG,"detect but not retrigger");}
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==true&&too_much_flag==false&&triggered_flag==false&&shake_triggered==true)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected shake triggered already!");
+                       // Log.i(TAG,"fake stroke detected shake triggered already!");
                     }
                     else if(pos_avg_local>=stroke_power_min&&pos_avg_local<stroke_power_max&&stroke_state>=0&&gravity_flag==false&&too_much_flag==false&&triggered_flag==false&&shake_triggered==false)
                     {
@@ -1717,7 +1730,7 @@ public class MainActivity extends AppCompatActivity {
                     else if(pos_avg_local>stroke_power_max&&gravity_flag==true)
                     {
                         stroke_detected=false;
-                        Log.i(TAG,"fake stroke detected too much sound"+pos_avg_local);
+                       //Log.i(TAG,"fake stroke detected too much sound"+pos_avg_local);
                     }
                     else
                     {
@@ -2106,18 +2119,18 @@ public class MainActivity extends AppCompatActivity {
         btn_audio_record.setText("START");
         btn_audio_record.setBackgroundResource(R.drawable.btns);
         btn_audio_record.setOnClickListener(v->onclick_audio_start());
-        Log.i(TAG,"audio stop");
+        //Log.i(TAG,"audio stop");
     }
 
     private void onclick_audio_play()
     {
         if(file_org == null){
-            Log.i(TAG,"Null file");
+            //Log.i(TAG,"Null file");
             return;
         }
 //讀取檔案
         int musicLength = (int) (file_org.length() / 2);//過長的檔案可能會導致出錯
-        Log.i(TAG,"music len="+musicLength);
+       // Log.i(TAG,"music len="+musicLength);
         short[] music = new short[musicLength];
         try {
             InputStream is = new FileInputStream(file_org);
@@ -2138,9 +2151,9 @@ public class MainActivity extends AppCompatActivity {
             audioTrack.play();
             audioTrack.write(music, 0, musicLength);
             audioTrack.stop();
-            Log.i(TAG,"成功播放");
+            //Log.i(TAG,"成功播放");
         } catch (Throwable t) {
-            Log.e(TAG, "播放失敗"+t);
+            //Log.e(TAG, "播放失敗"+t);
             t.printStackTrace();
         }
     }
@@ -2270,7 +2283,7 @@ public class MainActivity extends AppCompatActivity {
         boolean dorecord=true;
 
         audioRecord.startRecording();
-        Log.i(TAG,"start calculating sd");
+       // Log.i(TAG,"start calculating sd");
         while(dorecord)
         {
             int bufferReadResult = audioRecord.read(buffer, 0, bufferSize);
@@ -2283,7 +2296,7 @@ public class MainActivity extends AppCompatActivity {
             if(collected==131071) {dorecord=false;break;}
         }
         audioRecord.stop();
-        Log.i(TAG,"stop calculating sd");
+        //Log.i(TAG,"stop calculating sd");
         double sum = 0.0, standardDeviation = 0.0;
         int length = 131072;
 
@@ -2296,7 +2309,7 @@ public class MainActivity extends AppCompatActivity {
         for(double num: collected_data) {
             standardDeviation += Math.pow(num - mean, 2);
         }
-        Log.i(TAG,"SD="+standardDeviation);
+       // Log.i(TAG,"SD="+standardDeviation);
 
     }
     public void onResume() {
@@ -2455,7 +2468,7 @@ private Handler updateviews =new Handler()
                 texDistance_y.setText(String.format("y=%04.2f", dischangey / 10) + "cm");
                 absolute_disx.setText(String.format("absolute x=%04.2f", disx/10) + "cm");
                 absolute_disy.setText(String.format("absolute y=%04.2f", disy/10)+ "cm");
-                Log.i(TAG,"result"+String.format("absolute x=%04.2f", disx/10) + "cm");
+                //Log.i(TAG,"result"+String.format("absolute x=%04.2f", disx/10) + "cm");
 
                 int tmp[][] = (int[][]) msg.obj;//1為x 2為y
                 //int tmp[][]={{4,1},{6,3},{8,2},{10,2},{10,1}};
@@ -2476,7 +2489,7 @@ private Handler updateviews =new Handler()
                     tmp[i][1]+=100;
                     tmp[i][2]+=50;
                     tmp[i][2]*=1.2;
-                    Log.i(TAG, "IN the section" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
+                   // Log.i(TAG, "IN the section" + "x= " + (int)Math.round(tmp[i][1]*1) + "y= " + (int)Math.round(tmp[i][2]*1));
                 }
                 for (int i = 0; i < twodimsioncount; i++) {
                     if(drawcount==1){
@@ -2556,7 +2569,10 @@ private Handler updateviews =new Handler()
         }
         else if(msg.what==2){
             int position=(int)msg.obj;
-            predict_text.setText("敲擊第"+position+"按鍵");
+            //predict_text.setText("敲擊第"+position+"按鍵");
+            if(mytoast!=null)mytoast.cancel();
+            mytoast=Toast.makeText(getApplicationContext(), "敲擊第"+position+"按鍵", Toast.LENGTH_LONG);
+            mytoast.show();
 
         }
         boolean xydata = false;
@@ -2659,13 +2675,13 @@ private Handler updateviews =new Handler()
                             stroke_training_result[r]=stroke_reading(stroke_training_result[r],r);
                             if(stroke_training_result[r]==null)
                             {
-                                Log.i("error","please train");
+                               // Log.i("error","please train");
                                 error_flag=true;
                                 break;
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
-                            Log.i("error","stroke read failed");
+                           // Log.i("error","stroke read failed");
                             stroke_train=true;
                             break;
 
@@ -2827,7 +2843,7 @@ private Handler updateviews =new Handler()
                         //idftdis is always 0
                         if(idftdis[0]!=0||idftdis[1]!=0)
                         {
-                            Log.i("testidft","x= "+idftdis[0]+" y= "+idftdis[1]);
+                            //Log.i("testidft","x= "+idftdis[0]+" y= "+idftdis[1]);
                         }
 
                         //keep difference stable;
@@ -3032,7 +3048,7 @@ private Handler updateviews =new Handler()
                                 }
                             }
                             for(int i=0;i<9;i++){
-                                Log.i("TAG","Stroke training distance: "+neighbor[i]);
+                               // Log.i("TAG","Stroke training distance: "+neighbor[i]);
                                 if(neighbor[nearest]>neighbor[i]){
                                     nearest=i;
                                 }
@@ -3090,7 +3106,7 @@ private Handler updateviews =new Handler()
                 fwriter.flush();
                 fwriter.close();
             } catch (IOException e) {
-                Log.i("TAG","fwrite error at end of llap"+e);
+                //Log.i("TAG","fwrite error at end of llap"+e);
                 e.printStackTrace();
             }
             String currentTime = LocalDateTime.now().toString();
@@ -3101,7 +3117,7 @@ private Handler updateviews =new Handler()
                 try {
                     copyFileUsingStream(file_baseband_txt,des);
                 } catch (IOException e) {
-                    Log.i("TAG","fwrite error at end of llap copying"+e);
+                    //Log.i("TAG","fwrite error at end of llap copying"+e);
                     e.printStackTrace();
                 }
             }
