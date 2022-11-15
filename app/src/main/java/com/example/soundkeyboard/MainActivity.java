@@ -536,9 +536,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     private void color_change_yellow(int i)
     {
         btn_results[i-1].setBackgroundResource(R.drawable.btn_yellow);
+        btn_results[i-1].setTextColor(Color.BLACK);
         ScaleAnimation scaleAnimation = new ScaleAnimation(
                 1.0f,1.25f,1.0f,1.25f,
                 Animation.RELATIVE_TO_SELF,0.5f,
@@ -551,6 +553,7 @@ public class MainActivity extends AppCompatActivity {
     private void color_change_blue(int i)
     {
         btn_results[i-1].setBackgroundResource(R.drawable.btns);
+        btn_results[i-1].setTextColor(Color.WHITE);
     }
 
     private void onclick_bat()
